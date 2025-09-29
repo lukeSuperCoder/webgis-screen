@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <el-card class="login-card">
-      <div class="title">福建省土壤信息服务平台</div>
+      <div class="title">呼伦贝尔市地下水环境监管系统</div>
       <el-form :model="loginForm" :rules="rules" ref="loginForm" class="login-form">
         <el-form-item prop="username">
           <el-input 
@@ -57,6 +57,8 @@ export default {
   },
   methods: {
     handleLogin() {
+      this.$router.push('/')
+      return
       this.$refs.loginForm.validate(async valid => {
         if (valid) {
           this.loading = true
