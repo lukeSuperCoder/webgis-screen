@@ -42,6 +42,13 @@
         </div>
       </div>
 
+      <!-- 底图切换面板 -->
+      <BasemapSwitcher 
+        :mapInstance="mapInstance" 
+        :currentBasemap="currentBasemap"
+        @basemap-changed="handleBasemapChanged"
+      />
+
       <!-- 播放条组件 -->
       <div class="timeline-container" v-if="false">
         <div class="timeline-controls">
@@ -70,9 +77,11 @@
   
   <script>
   import { OlMap } from '@/olmap/index'
+  import BasemapSwitcher from './BasemapSwitcher.vue'
 
   export default {
     components: {
+      BasemapSwitcher
     },
     data() {
       return {
@@ -93,6 +102,7 @@
           0: '1',
           51: '52'
         },
+        currentBasemap: 'TIANDITU_VEC', // 当前底图
       };
     },
     props:{
@@ -107,10 +117,10 @@
         let that = this;
         let options = {
           targetId: 'olmap',
-          baseMapName: 'AMAP_IMG',
-          center: [-1.7370224109938552,54.91845581490148],
+          baseMapName: 'TIANDITU_VEC',
+          center: [121.73,49.58],
           minZoom: 3,
-          zoom: 5.5
+          zoom: 7.5
         }
         this.mapInstance = new OlMap('olmap',options);
         this.mapInstance.view.setMinZoom(3);
@@ -285,6 +295,12 @@
         this.endDate = new Date(currentDate);
         // 触发数据更新事件
         this.$emit('date-changed', this.currentDay+1);
+      },
+      // 底图切换处理方法
+      handleBasemapChanged(basemapId) {
+        this.currentBasemap = basemapId;
+        console.log('底图已切换到:', basemapId);
+        // 可以在这里添加其他逻辑，比如保存用户偏好等
       },
     },
     created() {

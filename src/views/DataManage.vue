@@ -57,7 +57,6 @@ export default {
 <style scoped>
 .data-manage-page {
   padding: 20px;
-  height: 100%;
   overflow-y: auto;
 }
 

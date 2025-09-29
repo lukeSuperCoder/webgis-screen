@@ -52,7 +52,6 @@ export default {
 <style scoped>
 .system-manage-page {
   padding: 20px;
-  height: 100%;
   overflow-y: auto;
 }
 

@@ -43,6 +43,30 @@ class BaseMapManager {
           crossOrigin: 'anonymous',
           visible: false
         })
+      }),
+      // 天地图矢量底图
+      'TIANDITU_VEC': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false
+        })
+      }),
+      // 天地图影像底图
+      'TIANDITU_IMG': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false
+        })
+      }),
+      // 天地图地形底图
+      'TIANDITU_TER': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/ter_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false
+        })
       })
     }
 
@@ -54,7 +78,7 @@ class BaseMapManager {
           url: 'https://wprd0{1-4}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&style=8&x={x}&y={y}&z={z}',
           projection: 'EPSG:3857'
         }),
-        visible: true,
+        visible: false,
         zIndex: 1
       }),
       // 影像图注记
@@ -65,6 +89,33 @@ class BaseMapManager {
         }),
         visible: false,
         zIndex: 1
+      }),
+      // 天地图矢量注记
+      'TIANDITU_VEC_LABEL': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false,
+          zIndex: 1
+        })
+      }),
+      // 天地图影像注记
+      'TIANDITU_IMG_LABEL': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/cia_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false,
+          zIndex: 1
+        })
+      }),
+      // 天地图地形注记
+      'TIANDITU_TER_LABEL': new TileLayer({
+        source: new XYZ({
+          url: 'http://t0.tianditu.gov.cn/cta_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=9254b8157f0ff0a6331196e4afc27cb6',
+          projection: 'EPSG:3857',
+          visible: false,
+          zIndex: 1
+        })
       })
     };
 

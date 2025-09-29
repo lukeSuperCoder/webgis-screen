@@ -1,9 +1,10 @@
 import { Feature } from 'ol';
-import { LineString, Polygon, Circle as CircleGeom } from 'ol/geom';
+import { LineString, Polygon, Circle as CircleGeom, Point } from 'ol/geom';
 import { Vector as VectorLayer } from 'ol/layer';
 import { Vector as VectorSource } from 'ol/source';
 import { Style, Stroke, Fill, Circle } from 'ol/style';
 import { fromLonLat, toLonLat } from 'ol/proj';
+import { GeoJSON } from 'ol/format';
 
 class GeomLayer {
   constructor(mapInstance, options) {
@@ -99,17 +100,35 @@ class GeomLayer {
     const customStyle = feature.get('style') || {};
     const defaultStyle = this.options.defaultStyle;
 
-    const style = new Style({
+    const styleConfig = {
       stroke: new Stroke({
         color: (customStyle.stroke && customStyle.stroke.color) || defaultStyle.stroke.color,
         width: (customStyle.stroke && customStyle.stroke.width) || defaultStyle.stroke.width
-      }),
-      fill: type !== 'line' ? new Fill({
-        color: (customStyle.fill && customStyle.fill.color) || defaultStyle.fill.color
-      }) : undefined
-    });
+      })
+    };
 
-    return style;
+    // 添加填充样式（线和点不需要填充）
+    if (type !== 'line' && type !== 'point') {
+      styleConfig.fill = new Fill({
+        color: (customStyle.fill && customStyle.fill.color) || defaultStyle.fill.color
+      });
+    }
+
+    // 添加点样式
+    if (type === 'point') {
+      styleConfig.image = new Circle({
+        radius: (customStyle.point && customStyle.point.radius) || 5,
+        fill: new Fill({
+          color: (customStyle.point && customStyle.point.fillColor) || defaultStyle.stroke.color
+        }),
+        stroke: new Stroke({
+          color: (customStyle.point && customStyle.point.strokeColor) || '#FFFFFF',
+          width: (customStyle.point && customStyle.point.strokeWidth) || 2
+        })
+      });
+    }
+
+    return new Style(styleConfig);
   }
 
   /**
@@ -143,6 +162,135 @@ class GeomLayer {
    */
   getGeoms() {
     return this.vectorSource.getFeatures();
+  }
+
+  /**
+   * 绘制GeoJSON数据
+   * @param {Object|String} geojsonData GeoJSON对象或JSON字符串
+   * @param {Object} options 配置选项
+   * @param {Object} options.style 全局样式配置
+   * @param {Function} options.styleFunction 自定义样式函数
+   * @param {Boolean} options.fit 是否定位到图层，默认false
+   * @returns {Array} 添加的要素数组
+   */
+  drawGeoJSON(geojsonData, options = {}) {
+    const {
+      style = {},
+      styleFunction = null,
+      fit = false, // 新增参数，是否定位到图层
+    } = options;
+
+    // 解析GeoJSON数据
+    let geojson;
+    if (typeof geojsonData === 'string') {
+      try {
+        geojson = JSON.parse(geojsonData);
+      } catch (error) {
+        console.error('GeoJSON解析失败:', error);
+        return [];
+      }
+    } else {
+      geojson = geojsonData;
+    }
+
+    // 验证GeoJSON格式
+    if (!geojson || !geojson.type || !geojson.features) {
+      console.error('无效的GeoJSON格式');
+      return [];
+    }
+
+    // 创建GeoJSON格式解析器
+    const geoJSONFormat = new GeoJSON();
+    
+    // 解析要素
+    const features = geoJSONFormat.readFeatures(geojson, {
+      dataProjection: 'EPSG:4326',    // GeoJSON数据源坐标系（WGS84）
+      featureProjection: 'EPSG:3857'   // 目标坐标系（Web墨卡托）
+    });
+
+    // 添加样式和属性
+    const addedFeatures = [];
+    features.forEach(feature => {
+      // 设置默认类型
+      const geometry = feature.getGeometry();
+      let geomType = 'unknown';
+      if (geometry instanceof Point) {
+        geomType = 'point';
+      } else if (geometry instanceof LineString) {
+        geomType = 'line';
+      } else if (geometry instanceof Polygon) {
+        geomType = 'polygon';
+      } else if (geometry instanceof CircleGeom) {
+        geomType = 'circle';
+      }
+      
+      feature.set('type', geomType);
+      feature.set('style', style);
+      
+      // 如果有自定义样式函数，应用它
+      if (styleFunction && typeof styleFunction === 'function') {
+        const customStyle = styleFunction(feature);
+        if (customStyle) {
+          feature.set('style', customStyle);
+        }
+      }
+
+      this.vectorSource.addFeature(feature);
+      addedFeatures.push(feature);
+    });
+
+    // 新增：根据fit参数决定是否定位到图层
+    if (fit && addedFeatures.length > 0 && this.map) {
+      // 计算所有要素的范围
+      const extent = this.vectorSource.getExtent();
+      if (extent && extent[0] !== Infinity && extent[2] !== -Infinity) {
+        this.map.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 500, maxZoom: 18 });
+      }
+    }
+
+    return addedFeatures;
+  }
+
+  /**
+   * 导出当前图层为GeoJSON格式
+   * @param {Object} options 导出选项
+   * @param {String} options.projection 投影坐标系，默认'EPSG:4326'
+   * @param {Array} options.properties 要包含的属性字段
+   * @returns {Object} GeoJSON对象
+   */
+  exportToGeoJSON(options = {}) {
+    const {
+      projection = 'EPSG:4326',
+      properties = []
+    } = options;
+
+    const geoJSONFormat = new GeoJSON();
+    const features = this.vectorSource.getFeatures();
+    
+    // 过滤属性
+    const filteredFeatures = features.map(feature => {
+      const clonedFeature = feature.clone();
+      
+      if (properties.length > 0) {
+        const originalProperties = clonedFeature.getProperties();
+        const filteredProperties = {};
+        
+        properties.forEach(prop => {
+          if (originalProperties.hasOwnProperty(prop)) {
+            filteredProperties[prop] = originalProperties[prop];
+          }
+        });
+        
+        clonedFeature.setProperties(filteredProperties);
+      }
+      
+      return clonedFeature;
+    });
+
+    return geoJSONFormat.writeFeaturesObject(filteredFeatures, {
+      featureProjection: 'EPSG:3857',
+      dataProjection: projection
+    });
   }
 
   /**
