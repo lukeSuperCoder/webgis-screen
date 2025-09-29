@@ -43,7 +43,7 @@
       </div>
 
       <!-- 播放条组件 -->
-      <div class="timeline-container">
+      <div class="timeline-container" v-if="false">
         <div class="timeline-controls">
           <button @click="togglePlay" class="play-btn">
             <svg style="margin-left: 3px;" v-if="!isPlaying" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
@@ -70,12 +70,9 @@
   
   <script>
   import { OlMap } from '@/olmap/index'
-  import { ElSlider, ElPopover } from 'element-ui'
 
   export default {
     components: {
-      ElSlider,
-      ElPopover
     },
     data() {
       return {
@@ -93,8 +90,8 @@
         endDate: new Date(),
         playInterval: null,
         timeMarks: {
-          0: '1 week',
-          51: '52 week'
+          0: '1',
+          51: '52'
         },
       };
     },
@@ -459,6 +456,10 @@
     background-color: rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.5);
     transform: scale(1.05);
+  }
+  :deep(.el-slider) {
+    width: 100%;
+    margin: 0 16px;
   }
 
   :deep(.el-slider__runway) {

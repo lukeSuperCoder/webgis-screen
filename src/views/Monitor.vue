@@ -1,22 +1,46 @@
 <template> 
     <div class="monitor-page">
+        <WaterQualityMenu 
+            @parameter-selected="handleParameterSelected"
+            @menu-clicked="handleMenuClicked"
+            @boundary-toggle="handleBoundaryToggle"
+            @wells-toggle="handleWellsToggle"
+        />
         <ScreenMap @map-ready="handleMapReady" @date-changed="handleDateChanged" />
     </div>
 </template>
 
 <script>
 import ScreenMap from '@/components/ScreenMap.vue'
+import WaterQualityMenu from '@/components/WaterQualityMenu.vue'
 
 export default {
     components: {
-        ScreenMap
+        ScreenMap,
+        WaterQualityMenu
     },
     methods: {
         handleMapReady(mapInstance) {
             console.log('地图初始化完成:', mapInstance)
         },
         handleDateChanged(day) {
-            console.log('时间轴变化:', day)
+            // console.log('时间轴变化:', day)
+        },
+        handleParameterSelected(parameter) {
+            console.log('选择的水质参数:', parameter)
+            // 这里可以添加处理水质参数选择的逻辑
+        },
+        handleMenuClicked(menuType) {
+            console.log('菜单点击:', menuType)
+            // 这里可以添加处理菜单点击的逻辑
+        },
+        handleBoundaryToggle(show) {
+            console.log('项目边界范围切换:', show)
+            // 这里可以添加显示/隐藏项目边界的逻辑
+        },
+        handleWellsToggle(show) {
+            console.log('监测井分布切换:', show)
+            // 这里可以添加显示/隐藏监测井的逻辑
         }
     }
 }
