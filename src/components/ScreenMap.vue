@@ -39,11 +39,102 @@
       <!-- 弹出框 -->
       <div v-if="showPopup" class="popup-container" :style="popupStyle">
         <div class="popup-content">
+          <div class="popup-header">
+            <h3>{{ popupData.name }}</h3>
+            <button @click="closePopup" class="close-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="popup-body">
+            <!-- 监测井信息 -->
+            <div v-if="popupData.well_code" class="well-info">
+              <div class="info-item">
+                <span class="label">监测井编码:</span>
+                <span class="value">{{ popupData.well_code }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">项目编码:</span>
+                <span class="value">{{ popupData.project_code }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">水位埋深:</span>
+                <span class="value">{{ popupData.water_level_depth }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">成井深度:</span>
+                <span class="value">{{ popupData.well_depth }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">井口高程:</span>
+                <span class="value">{{ popupData.well_head_elevation }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">井管材质:</span>
+                <span class="value">{{ popupData.well_pipe_material }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">权属单位:</span>
+                <span class="value">{{ popupData.well_ownership_unit }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">区域监测点:</span>
+                <span class="value">{{ popupData.is_regional_monitoring_point }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">水源监测点:</span>
+                <span class="value">{{ popupData.is_water_source_monitoring_point }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">污染源监测点:</span>
+                <span class="value">{{ popupData.is_pollution_source_monitoring_point }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">符合长期监测要求:</span>
+                <span class="value">{{ popupData.meets_long_term_monitoring_requirements }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">开展维护管理:</span>
+                <span class="value">{{ popupData.has_maintenance_management }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">实际维护单位:</span>
+                <span class="value">{{ popupData.actual_maintenance_unit }}</span>
+              </div>
+            </div>
+            
+            <!-- 其他类型信息 -->
+            <div v-else class="other-info">
+              <div class="info-item">
+                <span class="label">MaxLoss:</span>
+                <span class="value">{{ popupData.MaxLoss }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Date:</span>
+                <span class="value">{{ popupData.Date }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">UpstreamRegion:</span>
+                <span class="value">{{ popupData.UpstreamRegion }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">UpstreamSector:</span>
+                <span class="value">{{ popupData.UpstreamSector }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">nuts2:</span>
+                <span class="value">{{ popupData.nuts2 }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 底图切换面板 -->
       <BasemapSwitcher 
+        v-if="mapInstance"
         :mapInstance="mapInstance" 
         :currentBasemap="currentBasemap"
         @basemap-changed="handleBasemapChanged"
@@ -142,23 +233,44 @@
         this.mapInstance.markerLayer.setOnClick(async (featureData, event) => {
           const zoom = this.mapInstance.view.getZoom();
           if(featureData.type === 'marker' && featureData.properties){
-            const data = featureData.properties.properties;
-            console.log('current click data',data);
-            this.popupData = {
-              name: 'Details',
-              MaxLoss: data.MaxLoss ? `${data.MaxLoss.toFixed(1)}` : 'Unknown',
-              Date: data['Date'].substr(0,7) || 'Unknown',
-              UpstreamRegion: data.UpstreamRegion || 'Unknown',
-              UpstreamSector: data.WorstSector ? `${data.WorstSector}` : 'Unknown',
-              nuts2: data.nuts2 || 'Unknown',
-            };
+            const data = featureData.properties;
+            console.log('current click data', data);
+            
+            // 检查是否为监测井数据
+            if (data.well_code) {
+              // 监测井弹窗数据
+              this.popupData = {
+                name: '监测井信息',
+                well_code: data.well_code || '未知',
+                project_code: data.project_code || '未知',
+                water_level_depth: data.water_level_depth ? `${data.water_level_depth}m` : '未知',
+                well_depth: data.well_depth ? `${data.well_depth}m` : '未知',
+                well_head_elevation: data.well_head_elevation ? `${data.well_head_elevation}m` : '未知',
+                well_pipe_material: data.well_pipe_material || '未知',
+                well_ownership_unit: data.well_ownership_unit || '未知',
+                is_regional_monitoring_point: data.is_regional_monitoring_point ? '是' : '否',
+                is_water_source_monitoring_point: data.is_water_source_monitoring_point ? '是' : '否',
+                is_pollution_source_monitoring_point: data.is_pollution_source_monitoring_point ? '是' : '否',
+                meets_long_term_monitoring_requirements: data.meets_long_term_monitoring_requirements ? '是' : '否',
+                has_maintenance_management: data.has_maintenance_management ? '是' : '否',
+                actual_maintenance_unit: data.actual_maintenance_unit || '未知'
+              };
+              
+              // 设置弹窗显示后应用样式
+              this.$nextTick(() => {
+                this.applyValueStyles();
+              });
+            } else {
+              
+            }
+            
             this.showPopup = true;
             
             // 计算弹出框位置
             const mapElement = document.getElementById('olmap');
             const rect = mapElement.getBoundingClientRect();
             const x = event.pixel[0] - rect.left;
-            const y = event.pixel[1] - rect.top - 10; // 向上偏移10px
+            const y = event.pixel[1] - rect.top - 5; // 向上偏移10px
             
             this.popupStyle = {
               top: `${y}px`,
@@ -259,6 +371,22 @@
       closePopup() {
         this.showPopup = false;
         this.popupData = null;
+      },
+      // 应用值样式
+      applyValueStyles() {
+        const valueElements = document.querySelectorAll('.popup-body .value');
+        valueElements.forEach(element => {
+          const text = element.textContent.trim();
+          element.classList.remove('value-yes', 'value-no', 'value-unknown');
+          
+          if (text === '是') {
+            element.classList.add('value-yes');
+          } else if (text === '否') {
+            element.classList.add('value-no');
+          } else if (text === '未知') {
+            element.classList.add('value-unknown');
+          }
+        });
       },
       togglePlay() {
         this.isPlaying = !this.isPlaying;
@@ -371,65 +499,214 @@
     position: absolute;
     z-index: 50;
     transform: translateX(-50%) translateY(-100%);
-    min-width: 300px;
-    max-width: 400px;
+    min-width: 320px;
+    max-width: 420px;
+    animation: popupSlideIn 0.3s ease-out;
+  }
+
+  @keyframes popupSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-100%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-100%) scale(1);
+    }
   }
 
   .popup-content {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(156, 163, 175, 0.3);
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    color: #374151;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.1),
+      0 8px 16px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    color: #1e293b;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .popup-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
   }
 
   .popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
-    border-bottom: 1px solid rgba(156, 163, 175, 0.2);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.02);
   }
 
   .popup-header h3 {
     margin: 0;
-    color: #1f2937;
-    font-weight: 600;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .popup-header h3::before {
+    content: '🔍';
+    font-size: 14px;
   }
 
   .close-btn {
-    padding: 4px;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-    color: #6b7280;
+    padding: 6px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    color: #64748b;
+    background: rgba(100, 116, 139, 0.1);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .close-btn:hover {
-    background-color: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
+    transform: scale(1.05);
   }
 
   .popup-body {
-    padding: 12px;
+    padding: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .popup-body::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .popup-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+  }
+
+  .popup-body::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 2px;
+  }
+
+  .popup-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
+
+  .well-info, .other-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .info-item {
-    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid rgba(59, 130, 246, 0.2);
+    transition: all 0.2s ease;
   }
 
-  .info-item:last-child {
-    margin-bottom: 0;
+  .info-item:hover {
+    background: rgba(59, 130, 246, 0.06);
+    border-left-color: rgba(59, 130, 246, 0.4);
+    transform: translateX(2px);
   }
 
   .info-item .label {
-    color: #3b82f6;
-    margin-right: 8px;
-    font-weight: 500;
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 100px;
+    flex-shrink: 0;
   }
 
   .info-item .value {
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 13px;
+    text-align: right;
+    word-break: break-word;
+    max-width: 200px;
+  }
+
+  /* 特殊值样式 */
+  .info-item .value.value-yes {
+    color: #059669;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .info-item .value.value-yes::before {
+    content: '✓';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+
+  .info-item .value.value-no {
+    color: #dc2626;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .info-item .value.value-no::before {
+    content: '✗';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+
+  .info-item .value.value-unknown {
     color: #6b7280;
+    font-style: italic;
+    position: relative;
+  }
+
+  .info-item .value.value-unknown::before {
+    content: '?';
+    margin-right: 4px;
+    font-weight: bold;
+  }
+
+  /* 响应式设计 */
+  @media (max-width: 768px) {
+    .popup-container {
+      min-width: 280px;
+      max-width: 90vw;
+    }
+    
+    .popup-body {
+      padding: 16px;
+    }
+    
+    .info-item {
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .info-item .label {
+      min-width: auto;
+    }
+    
+    .info-item .value {
+      text-align: left;
+      max-width: none;
+    }
   }
 
   .timeline-container {
