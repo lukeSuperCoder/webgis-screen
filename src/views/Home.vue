@@ -4,7 +4,6 @@
     <el-header height="60px" class="header">
       <div class="header-left">
         <div class="header-logo">
-          <i class="el-icon-location"></i>
         </div>
         <div class="header-title">
           呼伦贝尔市地下水环境监管系统
@@ -14,7 +13,7 @@
       <!-- 顶部导航菜单 -->
       <div class="header-nav">
         <el-menu
-          :default-active="$route.path"
+          :default-active="activeMenuIndex"
           class="header-menu"
           mode="horizontal"
           text-color="#fff"
@@ -65,6 +64,22 @@ export default {
       userInfo: JSON.parse(localStorage.getItem('userInfo')) || {}
     }
   },
+  computed: {
+    activeMenuIndex() {
+      const path = this.$route.path
+      // 根据当前路径判断激活的菜单项
+      if (path.startsWith('/analysis')) {
+        return '/analysis'
+      } else if (path.startsWith('/data')) {
+        return '/data'
+      } else if (path.startsWith('/system')) {
+        return '/system'
+      } else if (path.startsWith('/monitor')) {
+        return '/monitor'
+      }
+      return path
+    }
+  },
   methods: {
     handleLogout() {
       localStorage.removeItem('isLogin')
@@ -91,10 +106,21 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 16px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
+  overflow: hidden;
 }
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+}
+
 
 .header-left {
   display: flex;
@@ -102,9 +128,13 @@ export default {
 }
 
 .header-logo {
+  width: 40px;
+  height: 40px;
   font-size: 26px;
   margin-right: 12px;
   color: #ffffff;
+  background: url('../assets/logo.png') no-repeat center center;
+  background-size: 100% 100%;
 }
 
 .header-title {
@@ -118,6 +148,8 @@ export default {
   flex: 1;
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 2;
 }
 
 .header-menu {
@@ -126,35 +158,110 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
 .header-menu .el-menu-item {
   border-bottom: 3px solid transparent;
-  padding: 0 20px;
-  margin: 0 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  padding: 0 24px;
+  margin: 0 6px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  color: #ffffff !important;
+  background-color: transparent !important;
+  overflow: hidden;
+}
+
+.header-menu .el-menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+}
+
+.header-menu .el-menu-item:hover::before {
+  left: 100%;
 }
 
 .header-menu .el-menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
+  border-radius: 8px;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff !important;
 }
 
 .header-menu .el-menu-item.is-active {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
   border-bottom-color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  border-radius: 8px;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  color: #ffffff !important;
+  position: relative;
+}
+
+.header-menu .el-menu-item.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #ffffff, #e0e7ff, #ffffff);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
 }
 
 .header-menu .el-menu-item i {
-  margin-right: 6px;
+  margin-right: 5px;
   font-size: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.header-menu .el-menu-item:hover i {
+  transform: scale(1.1);
+  color: #e0e7ff !important;
+}
+
+.header-menu .el-menu-item.is-active i {
+  transform: scale(1.05);
+  color: #ffffff !important;
 }
 
 .header-menu .el-menu-item span {
   font-weight: 500;
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.5px;
+}
+
+.header-menu .el-menu-item:hover span {
+  color: #e0e7ff !important;
+  font-weight: 600;
+}
+
+.header-menu .el-menu-item.is-active span {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* 确保Element UI的默认样式被覆盖 */
+.header-menu .el-menu-item:focus {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.header-menu .el-menu-item:active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
 }
 
 .header-right {
@@ -223,6 +330,8 @@ export default {
   }
   
   .header-logo {
+    width: 30px;
+    height: 30px;
     font-size: 24px;
     margin-right: 10px;
   }
@@ -247,6 +356,8 @@ export default {
   }
   
   .header-logo {
+    width: 20px;
+    height: 20px;
     font-size: 22px;
     margin-right: 8px;
   }
@@ -286,6 +397,8 @@ export default {
   }
   
   .header-logo {
+    width: 18px;
+    height: 18px;
     font-size: 20px;
     margin-right: 6px;
   }
@@ -329,6 +442,8 @@ export default {
   }
   
   .header-logo {
+    width: 16px;
+    height: 16px;
     font-size: 18px;
     margin-right: 4px;
   }
@@ -373,6 +488,8 @@ export default {
   }
   
   .header-logo {
+    width: 14px;
+    height: 14px;
     font-size: 16px;
     margin-right: 3px;
   }
