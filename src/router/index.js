@@ -139,14 +139,12 @@ const router = new VueRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  next()
-
-  // const isLogin = localStorage.getItem('isLogin')
-  // if (to.meta.requiresAuth && !isLogin) {
-  //   next('/login')
-  // } else {
-  //   next()
-  // }
+  const isLogin = localStorage.getItem('isLogin')
+  if (to.meta.requiresAuth && !isLogin) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router 

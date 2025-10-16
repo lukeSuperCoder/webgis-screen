@@ -42,7 +42,7 @@
       <div class="header-right">
         <div class="user-info">
           <i class="el-icon-user user-icon"></i>
-          <span class="welcome-text">欢迎您,管理员 {{ userInfo.realName }}</span>
+          <span class="welcome-text">欢迎您, {{ userInfo.userName || '' }}</span>
           <i class="el-icon-switch-button logout-icon" @click="handleLogout"></i>
         </div>
       </div>
@@ -54,6 +54,7 @@
 </template>
 
 <script>
+import { getUserInfo } from '@/api/auth'
 
 export default {
   name: 'Home',
@@ -61,8 +62,11 @@ export default {
   },
   data() {
     return {
-      userInfo: JSON.parse(localStorage.getItem('userInfo')) || {}
+      userInfo: {}
     }
+  },
+  async mounted() {
+    await this.loadUserInfo()
   },
   computed: {
     activeMenuIndex() {
@@ -81,9 +85,27 @@ export default {
     }
   },
   methods: {
+    async loadUserInfo() {
+      try {
+        const res = await getUserInfo()
+        if (res.code === 200 && res.user) {
+          this.userInfo = res.user
+          localStorage.setItem('userInfo', JSON.stringify(res.user))
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+        // 如果获取用户信息失败，尝试从localStorage获取
+        const cachedUserInfo = localStorage.getItem('userInfo')
+        if (cachedUserInfo) {
+          this.userInfo = JSON.parse(cachedUserInfo)
+        }
+      }
+    },
     handleLogout() {
+      // 清理所有登录相关的本地存储
       localStorage.removeItem('isLogin')
       localStorage.removeItem('userInfo')
+      localStorage.removeItem('token')
       this.$router.push('/login')
       this.$message.success('已退出登录')
     }

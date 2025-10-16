@@ -3,14 +3,18 @@ import { Message } from 'element-ui'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://127.0.0.1:8089/soil-api', // API的base_url
+  baseURL: 'http://localhost:8090', // API的base_url
   timeout: 15000 // 请求超时时间
 })
 
 // 请求拦截器
 service.interceptors.request.use(
   config => {
-    // 可以在这里添加token等认证信息
+    // 添加token到请求头
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {
@@ -23,13 +27,14 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     const res = response.data
-    if (!res.success) {
+    // 根据OpenAPI定义的响应格式处理
+    if (res.code !== 200) {
       Message({
-        message: res.message || '请求失败',
+        message: res.msg || '请求失败',
         type: 'error',
         duration: 5 * 1000
       })
-      return Promise.reject(new Error(res.message || '请求失败'))
+      return Promise.reject(new Error(res.msg || '请求失败'))
     }
     return res
   },

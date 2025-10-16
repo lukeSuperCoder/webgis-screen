@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { login } from '@/api/user'
+import { login } from '@/api/auth'
 
 export default {
   name: 'Login',
@@ -57,20 +57,27 @@ export default {
   },
   methods: {
     handleLogin() {
-      this.$router.push('/')
-      return
       this.$refs.loginForm.validate(async valid => {
         if (valid) {
           this.loading = true
           try {
-            const res = await login(this.loginForm.username, this.loginForm.password)
-            // 登录成功，存储用户信息
-            localStorage.setItem('userInfo', JSON.stringify(res.data))
-            localStorage.setItem('isLogin', 'true')
-            
-            this.$message.success('登录成功')
-            // 跳转到主页
-            this.$router.push('/')
+            // 调用新的登录API，传递对象参数
+            const res = await login({
+              username: this.loginForm.username,
+              password: this.loginForm.password
+            })
+            // 根据OpenAPI定义的响应格式处理
+            if (res.code === 200 && res.token) {
+              // 存储token
+              localStorage.setItem('token', res.token)
+              localStorage.setItem('isLogin', 'true')
+              
+              this.$message.success('登录成功')
+              // 跳转到主页
+              this.$router.push('/')
+            } else {
+              this.$message.error(res.msg || '登录失败')
+            }
           } catch (error) {
             console.error('登录失败:', error)
             this.$message.error(error.message || '登录失败，请重试')
