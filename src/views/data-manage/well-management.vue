@@ -3,27 +3,63 @@
     <!-- 搜索筛选区域 -->
     <div class="search-section">
       <div class="search-form">
-        <label>监测井名称:</label>
-        <el-input 
-          v-model="searchForm.name" 
-          placeholder="请选择监测井名称"
-          style="width: 200px; margin-right: 10px;"
-          clearable
-        >
-          <i slot="suffix" class="el-input__icon el-icon-arrow-down"></i>
-        </el-input>
-        <el-button type="primary" @click="handleQuery">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
-        <el-button>
-          展开
-          <i class="el-icon-arrow-down"></i>
-        </el-button>
+        <el-form :inline="true" :model="searchForm" class="search-form-inline">
+          <el-form-item label="监测井编码:">
+            <el-input 
+              v-model="searchForm.wellCode" 
+              placeholder="请输入监测井编码"
+              style="width: 200px;"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="省份:">
+            <el-input 
+              v-model="searchForm.provinceCode" 
+              placeholder="请输入省份代码"
+              style="width: 150px;"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="城市:">
+            <el-input 
+              v-model="searchForm.cityCode" 
+              placeholder="请输入城市代码"
+              style="width: 150px;"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="区县:">
+            <el-input 
+              v-model="searchForm.countyCode" 
+              placeholder="请输入区县代码"
+              style="width: 150px;"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="井权单位:">
+            <el-select v-model="searchForm.wellOwnershipUnit" placeholder="请选择井权单位" style="width: 150px;" clearable>
+              <el-option label="机民井" value="机民井"></el-option>
+              <el-option label="国家井" value="国家井"></el-option>
+              <el-option label="地方井" value="地方井"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="是否区域监测点:">
+            <el-select v-model="searchForm.isAreaMonitoringPoint" placeholder="区域监测点" style="width: 120px;" clearable>
+              <el-option label="是" value="true"></el-option>
+              <el-option label="否" value="false"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleQuery">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
       </div>
       
       <!-- 操作按钮区域 -->
       <div class="action-buttons">
         <el-button type="primary" @click="addWell">新增</el-button>
-        <el-button type="primary" @click="handleExport">导出</el-button>
+        <el-button type="success" @click="handleImport">导入</el-button>
       </div>
     </div>
 
@@ -36,18 +72,28 @@
         stripe
         border
       >
-        <el-table-column type="selection" width="55" align="center"></el-table-column>
         <el-table-column type="index" label="序号" width="60" align="center"></el-table-column>
-        <el-table-column prop="wellNumber" label="监测井编号" width="120" align="center"></el-table-column>
-        <el-table-column prop="projectNumber" label="监测项目编号" width="120" align="center"></el-table-column>
-        <el-table-column prop="wellType" label="监测井类型" width="120" align="center"></el-table-column>
-        <el-table-column prop="affiliation" label="监测井隶属" width="120" align="center"></el-table-column>
-        <el-table-column prop="isFaulty" label="是否故障" width="100" align="center"></el-table-column>
-        <el-table-column prop="constructionTime" label="建设时间" width="150" align="center"></el-table-column>
-        <el-table-column label="操作" width="150" align="center" fixed="right">
+        <el-table-column prop="wellCode" label="监测井编码" width="150" align="center"></el-table-column>
+        <el-table-column prop="provinceName" label="省份" width="120" align="center"></el-table-column>
+        <el-table-column prop="cityName" label="城市" width="120" align="center"></el-table-column>
+        <el-table-column prop="countyName" label="区县" width="120" align="center"></el-table-column>
+        <el-table-column prop="longitude" label="经度" width="120" align="center"></el-table-column>
+        <el-table-column prop="latitude" label="纬度" width="120" align="center"></el-table-column>
+        <el-table-column prop="wellDepth" label="井深(m)" width="100" align="center"></el-table-column>
+        <el-table-column prop="wellOwnershipUnit" label="井权单位" width="120" align="center"></el-table-column>
+        <el-table-column prop="burialCondition" label="埋藏条件" width="120" align="center"></el-table-column>
+        <el-table-column prop="aquiferMedium" label="含水介质" width="120" align="center"></el-table-column>
+        <el-table-column label="监测点类型" width="150" align="center">
+          <template slot-scope="scope">
+            <el-tag v-if="scope.row.isAreaMonitoringPoint" type="primary" size="mini">区域监测点</el-tag>
+            <el-tag v-if="scope.row.isWaterSourceMonitoringPoint" type="success" size="mini">水源监测点</el-tag>
+            <el-tag v-if="scope.row.isPollutionSourceMonitoringPoint" type="warning" size="mini">污染源监测点</el-tag>
+            <span v-if="!scope.row.isAreaMonitoringPoint && !scope.row.isWaterSourceMonitoringPoint && !scope.row.isPollutionSourceMonitoringPoint">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="editWell(scope.row)">编辑</el-button>
-            <el-button size="mini" type="success" @click="viewDetails(scope.row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -57,7 +103,7 @@
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="currentPage"
-        :page-sizes="[20]"
+        :page-sizes="[10, 20, 50, 100]"
         :page-size="pageSize"
         layout="total, sizes, prev, pager, next"
         :total="total"
@@ -66,63 +112,120 @@
     </el-card>
     
     <!-- 新增/编辑监测井对话框 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px">
-      <el-form :model="wellForm" :rules="rules" ref="wellForm" label-width="120px">
+    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="1000px">
+      <el-form :model="wellForm" :rules="rules" ref="wellForm" label-width="140px">
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="监测井编号" prop="wellNumber">
-              <el-input v-model="wellForm.wellNumber" placeholder="请输入监测井编号"></el-input>
+          <el-col :span="8">
+            <el-form-item label="监测井编码" prop="wellCode">
+              <el-input v-model="wellForm.wellCode" placeholder="请输入监测井编码"></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="监测项目编号" prop="projectNumber">
-              <el-input v-model="wellForm.projectNumber" placeholder="请输入监测项目编号"></el-input>
+          <el-col :span="8">
+            <el-form-item label="项目ID" prop="projectId">
+              <el-input v-model="wellForm.projectId" placeholder="请输入项目ID"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="井深(m)" prop="wellDepth">
+              <el-input v-model="wellForm.wellDepth" placeholder="请输入井深"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
         
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="监测井类型" prop="wellType">
-              <el-select v-model="wellForm.wellType" placeholder="请选择监测井类型">
-                <el-option label="基岩" value="基岩"></el-option>
-                <el-option label="松散层" value="松散层"></el-option>
-                <el-option label="混合型" value="混合型"></el-option>
-              </el-select>
+            <el-form-item label="省份代码" prop="provinceCode">
+              <el-input v-model="wellForm.provinceCode" placeholder="请输入省份代码"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="监测井隶属" prop="affiliation">
-              <el-select v-model="wellForm.affiliation" placeholder="请选择监测井隶属">
-                <el-option label="国家级" value="国家级"></el-option>
-                <el-option label="省级" value="省级"></el-option>
-                <el-option label="市级" value="市级"></el-option>
-                <el-option label="县级" value="县级"></el-option>
-              </el-select>
+            <el-form-item label="城市代码" prop="cityCode">
+              <el-input v-model="wellForm.cityCode" placeholder="请输入城市代码"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="是否故障" prop="isFaulty">
-              <el-select v-model="wellForm.isFaulty" placeholder="请选择是否故障">
-                <el-option label="是" value="是"></el-option>
-                <el-option label="否" value="否"></el-option>
+            <el-form-item label="区县代码" prop="countyCode">
+              <el-input v-model="wellForm.countyCode" placeholder="请输入区县代码"></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="经度" prop="longitude">
+              <el-input v-model="wellForm.longitude" placeholder="请输入经度"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="纬度" prop="latitude">
+              <el-input v-model="wellForm.latitude" placeholder="请输入纬度"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="井权单位">
+              <el-select v-model="wellForm.wellOwnershipUnit" placeholder="请选择井权单位">
+                <el-option label="机民井" value="机民井"></el-option>
+                <el-option label="国家井" value="国家井"></el-option>
+                <el-option label="地方井" value="地方井"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
         </el-row>
         
-        <el-form-item label="建设时间" prop="constructionTime">
-          <el-date-picker
-            v-model="wellForm.constructionTime"
-            type="datetime"
-            placeholder="请选择建设时间"
-            format="yyyy-MM-dd HH:mm:ss"
-            value-format="yyyy-MM-dd HH:mm:ss">
-          </el-date-picker>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="埋藏条件">
+              <el-select v-model="wellForm.burialCondition" placeholder="请选择埋藏条件">
+                <el-option label="潜水" value="潜水"></el-option>
+                <el-option label="承压水" value="承压水"></el-option>
+                <el-option label="混合水" value="混合水"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="含水介质">
+              <el-select v-model="wellForm.aquiferMedium" placeholder="请选择含水介质">
+                <el-option label="孔隙水" value="孔隙水"></el-option>
+                <el-option label="裂隙水" value="裂隙水"></el-option>
+                <el-option label="岩溶水" value="岩溶水"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="井管材质">
+              <el-select v-model="wellForm.wellPipeMaterial" placeholder="请选择井管材质">
+                <el-option label="钢管" value="钢管"></el-option>
+                <el-option label="塑料管" value="塑料管"></el-option>
+                <el-option label="其他" value="其他"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="区域监测点">
+              <el-switch v-model="wellForm.isAreaMonitoringPoint"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="水源监测点">
+              <el-switch v-model="wellForm.isWaterSourceMonitoringPoint"></el-switch>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="污染源监测点">
+              <el-switch v-model="wellForm.isPollutionSourceMonitoringPoint"></el-switch>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-form-item label="污染源信息">
+          <el-input type="textarea" v-model="wellForm.pollutionSourceInfo" placeholder="请输入污染源信息" :rows="2"></el-input>
         </el-form-item>
         
-        <el-form-item label="备注" prop="description">
-          <el-input type="textarea" v-model="wellForm.description" placeholder="请输入备注信息"></el-input>
+        <el-form-item label="备注">
+          <el-input type="textarea" v-model="wellForm.description" placeholder="请输入备注信息" :rows="2"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -134,125 +237,267 @@
 </template>
 
 <script>
+import { 
+  getMonitorWellList, 
+  addMonitorWell, 
+  updateMonitorWell, 
+  getMonitorWellInfo,
+  importMonitorWell
+} from '@/api/monitorWell'
+
 export default {
   name: 'WellManagement',
   data() {
     return {
       loading: false,
       searchForm: {
-        name: ''
+        wellCode: '',
+        provinceCode: '',
+        cityCode: '',
+        countyCode: '',
+        isAreaMonitoringPoint: '',
+        isWaterSourceMonitoringPoint: '',
+        isPollutionSourceMonitoringPoint: '',
+        wellOwnershipUnit: ''
       },
-      wellsData: [
-        {
-          id: 1,
-          wellNumber: '12000001',
-          projectNumber: '12000001',
-          wellType: '基岩',
-          affiliation: '国家级',
-          isFaulty: '是',
-          constructionTime: '2021-11-11 18:07:01',
-          description: '基岩监测井'
-        }
-      ],
-      total: 3,
+      wellsData: [],
+      total: 0,
       currentPage: 1,
-      pageSize: 20,
+      pageSize: 10,
       dialogVisible: false,
       dialogTitle: '新增监测井',
       wellForm: {
-        wellNumber: '',
-        projectNumber: '',
-        wellType: '',
-        affiliation: '',
-        isFaulty: '',
-        constructionTime: '',
+        wellCode: '',
+        projectId: '',
+        provinceCode: '',
+        cityCode: '',
+        countyCode: '',
+        longitude: '',
+        latitude: '',
+        wellDepth: '',
+        wellOwnershipUnit: '',
+        burialCondition: '',
+        aquiferMedium: '',
+        wellPipeMaterial: '',
+        isAreaMonitoringPoint: false,
+        isWaterSourceMonitoringPoint: false,
+        isPollutionSourceMonitoringPoint: false,
+        areaMonitoringPointType: '',
+        waterSourceInfo: '',
+        pollutionSourceInfo: '',
+        wellheadElevation: '',
+        wellheadInnerDiameter: '',
+        isMultipleScreenPipe: false,
+        screenPipeDepth: '',
+        isSuitableForLongTermMonitoring: false,
+        isConvertedToLongTermMonitoring: false,
+        isMaintenanceManagementCarriedOut: false,
+        actualMaintenanceManagementUnit: '',
+        isSealedBackfilledForNonLongTerm: false,
+        sealedBackfilledStatus: '',
+        imageUrl: '',
         description: ''
       },
       rules: {
-        wellNumber: [
-          { required: true, message: '请输入监测井编号', trigger: 'blur' }
+        wellCode: [
+          { required: true, message: '请输入监测井编码', trigger: 'blur' }
         ],
-        projectNumber: [
-          { required: true, message: '请输入监测项目编号', trigger: 'blur' }
+        projectId: [
+          { required: true, message: '请输入项目ID', trigger: 'blur' }
         ],
-        wellType: [
-          { required: true, message: '请选择监测井类型', trigger: 'change' }
+        provinceCode: [
+          { required: true, message: '请输入省份代码', trigger: 'blur' }
         ],
-        affiliation: [
-          { required: true, message: '请选择监测井隶属', trigger: 'change' }
+        cityCode: [
+          { required: true, message: '请输入城市代码', trigger: 'blur' }
         ],
-        isFaulty: [
-          { required: true, message: '请选择是否故障', trigger: 'change' }
+        countyCode: [
+          { required: true, message: '请输入区县代码', trigger: 'blur' }
         ],
-        constructionTime: [
-          { required: true, message: '请选择建设时间', trigger: 'change' }
+        longitude: [
+          { required: true, message: '请输入经度', trigger: 'blur' }
+        ],
+        latitude: [
+          { required: true, message: '请输入纬度', trigger: 'blur' }
+        ],
+        wellDepth: [
+          { required: true, message: '请输入井深', trigger: 'blur' }
         ]
-      }
+      },
     }
   },
+  mounted() {
+    this.loadWellsData()
+  },
   methods: {
+    // 加载监测井数据
+    async loadWellsData() {
+      this.loading = true
+      try {
+        const params = {
+          pageNum: this.currentPage,
+          pageSize: this.pageSize,
+          ...this.searchForm
+        }
+        const res = await getMonitorWellList(params)
+        if (res.code === 200) {
+          this.wellsData = res.rows || []
+          this.total = res.total || 0
+        }
+      } catch (error) {
+        console.error('获取监测井列表失败:', error)
+        this.$message.error('获取监测井列表失败')
+      } finally {
+        this.loading = false
+      }
+    },
     // 查询
     handleQuery() {
-      this.loading = true
-      // 模拟查询
-      setTimeout(() => {
-        this.loading = false
-        this.$message.success('查询完成')
-      }, 1000)
+      this.currentPage = 1
+      this.loadWellsData()
     },
     // 重置
     handleReset() {
-      this.searchForm.name = ''
-      this.$message.info('重置成功')
+      this.searchForm = {
+        wellCode: '',
+        provinceCode: '',
+        cityCode: '',
+        countyCode: '',
+        isAreaMonitoringPoint: '',
+        isWaterSourceMonitoringPoint: '',
+        isPollutionSourceMonitoringPoint: '',
+        wellOwnershipUnit: ''
+      }
+      this.currentPage = 1
+      this.loadWellsData()
     },
     // 导出
     handleExport() {
-      this.$message.success('导出功能')
+      this.$message.info('导出功能开发中')
+    },
+    // 导入
+    handleImport() {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.xlsx,.xls'
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (file) {
+          const formData = new FormData()
+          formData.append('file', file)
+          try {
+            const res = await importMonitorWell(formData)
+            if (res.code === 200) {
+              this.$message.success('导入成功')
+              this.loadWellsData()
+            }
+          } catch (error) {
+            console.error('导入失败:', error)
+            this.$message.error('导入失败')
+          }
+        }
+      }
+      input.click()
     },
     // 分页大小改变
     handleSizeChange(val) {
       this.pageSize = val
       this.currentPage = 1
+      this.loadWellsData()
     },
     // 当前页改变
     handleCurrentChange(val) {
       this.currentPage = val
+      this.loadWellsData()
     },
     // 新增监测井
     addWell() {
       this.dialogTitle = '新增监测井'
       this.wellForm = {
-        wellNumber: '',
-        projectNumber: '',
-        wellType: '',
-        affiliation: '',
-        isFaulty: '',
-        constructionTime: '',
+        wellCode: '',
+        projectId: '',
+        provinceCode: '',
+        cityCode: '',
+        countyCode: '',
+        longitude: '',
+        latitude: '',
+        wellDepth: '',
+        wellOwnershipUnit: '',
+        burialCondition: '',
+        aquiferMedium: '',
+        wellPipeMaterial: '',
+        isAreaMonitoringPoint: false,
+        isWaterSourceMonitoringPoint: false,
+        isPollutionSourceMonitoringPoint: false,
+        areaMonitoringPointType: '',
+        waterSourceInfo: '',
+        pollutionSourceInfo: '',
+        wellheadElevation: '',
+        wellheadInnerDiameter: '',
+        isMultipleScreenPipe: false,
+        screenPipeDepth: '',
+        isSuitableForLongTermMonitoring: false,
+        isConvertedToLongTermMonitoring: false,
+        isMaintenanceManagementCarriedOut: false,
+        actualMaintenanceManagementUnit: '',
+        isSealedBackfilledForNonLongTerm: false,
+        sealedBackfilledStatus: '',
+        imageUrl: '',
         description: ''
       }
       this.dialogVisible = true
     },
     // 编辑监测井
-    editWell(row) {
+    async editWell(row) {
       this.dialogTitle = '编辑监测井'
-      this.wellForm = { ...row }
+      try {
+        const res = await getMonitorWellInfo(row.wellCode)
+        if (res.code === 200) {
+          this.wellForm = { ...res.data }
+        }
+      } catch (error) {
+        console.error('获取监测井详情失败:', error)
+        this.$message.error('获取监测井详情失败')
+      }
       this.dialogVisible = true
     },
     // 查看详情
-    viewDetails(row) {
-      this.$message.info(`查看监测井详情: ${row.wellNumber}`)
+    async viewDetails(row) {
+      try {
+        const res = await getMonitorWellInfo(row.wellCode)
+        if (res.code === 200) {
+          this.$alert(JSON.stringify(res.data, null, 2), '监测井详情', {
+            confirmButtonText: '确定'
+          })
+        }
+      } catch (error) {
+        console.error('获取监测井详情失败:', error)
+        this.$message.error('获取监测井详情失败')
+      }
     },
     // 保存监测井
     saveWell() {
-      this.$refs.wellForm.validate((valid) => {
+      this.$refs.wellForm.validate(async (valid) => {
         if (valid) {
-          this.$message.success('监测井信息保存成功')
-          this.dialogVisible = false
-        } else {
-          this.$message.error('请填写完整信息')
+          try {
+            let res
+            if (this.wellForm.id) {
+              res = await updateMonitorWell(this.wellForm)
+            } else {
+              res = await addMonitorWell(this.wellForm)
+            }
+            if (res.code === 200) {
+              this.$message.success('保存成功')
+              this.dialogVisible = false
+              this.loadWellsData()
+            }
+          } catch (error) {
+            console.error('保存失败:', error)
+            this.$message.error('保存失败')
+          }
         }
       })
-    }
+    },
   }
 }
 </script>
@@ -271,15 +516,18 @@ export default {
 }
 
 .search-form {
-  display: flex;
-  align-items: center;
   margin-bottom: 15px;
 }
 
-.search-form label {
-  margin-right: 10px;
-  font-weight: 500;
-  color: #606266;
+.search-form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-form-inline .el-form-item {
+  margin-right: 15px;
+  margin-bottom: 10px;
 }
 
 .action-buttons {

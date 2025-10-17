@@ -28,13 +28,17 @@ service.interceptors.response.use(
   response => {
     const res = response.data
     // 根据OpenAPI定义的响应格式处理
-    if (res.code !== 200) {
+    if (res.code !== 200 && res.code !== 0) {
       Message({
         message: res.msg || '请求失败',
         type: 'error',
         duration: 5 * 1000
       })
       return Promise.reject(new Error(res.msg || '请求失败'))
+    } else if (res.code === 401) {
+      localStorage.removeItem('token')
+      router.push('/login')
+      return Promise.reject(new Error('请先登录'))
     }
     return res
   },

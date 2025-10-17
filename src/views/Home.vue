@@ -23,10 +23,10 @@
             <i class="el-icon-s-home"></i>
             <span>综合监测</span>
           </el-menu-item>
-          <el-menu-item index="/analysis">
+          <!-- <el-menu-item index="/analysis">
             <i class="el-icon-data-analysis"></i>
             <span>评价分析</span>
-          </el-menu-item>
+          </el-menu-item> -->
           <el-menu-item index="/data">
             <i class="el-icon-document"></i>
             <span>数据管理</span>

@@ -23,16 +23,16 @@ export default {
           title: '用户管理',
           icon: 'el-icon-user'
         },
-        {
-          key: '/system/site-management',
-          title: '站点信息管理',
-          icon: 'el-icon-location'
-        },
-        {
-          key: '/system/project-management',
-          title: '监测项目配置',
-          icon: 'el-icon-setting'
-        }
+        // {
+        //   key: '/system/site-management',
+        //   title: '站点信息管理',
+        //   icon: 'el-icon-location'
+        // },
+        // {
+        //   key: '/system/project-management',
+        //   title: '监测项目配置',
+        //   icon: 'el-icon-setting'
+        // }
       ]
     }
   },
