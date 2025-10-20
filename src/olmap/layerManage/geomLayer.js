@@ -139,6 +139,17 @@ class GeomLayer {
   }
 
   /**
+   * 获取图层范围
+   * @returns {Array|undefined} extent [minX, minY, maxX, maxY]
+   */
+  getExtent() {
+    if (!this.vectorSource) return undefined;
+    const extent = this.vectorSource.getExtent();
+    if (!extent || extent[0] === Infinity || extent[2] === -Infinity) return undefined;
+    return extent;
+  }
+
+  /**
    * 移除指定图形
    * @param {Feature} feature 要移除的图形要素
    */

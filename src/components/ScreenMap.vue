@@ -50,58 +50,82 @@
           </div>
           <div class="popup-body">
             <!-- 监测井信息 -->
-            <div v-if="popupData.well_code" class="well-info">
+            <div v-if="popupData.wellCode || popupData.well_code" class="well-info">
               <div class="info-item">
                 <span class="label">监测井编码:</span>
-                <span class="value">{{ popupData.well_code }}</span>
+                <span class="value">{{ popupData.wellCode || popupData.well_code }}</span>
               </div>
               <div class="info-item">
                 <span class="label">项目编码:</span>
-                <span class="value">{{ popupData.project_code }}</span>
+                <span class="value">{{ popupData.projectId || popupData.project_code }}</span>
               </div>
               <div class="info-item">
-                <span class="label">水位埋深:</span>
-                <span class="value">{{ popupData.water_level_depth }}</span>
+                <span class="label">地理位置:</span>
+                <span class="value">{{ popupData.provinceName }} {{ popupData.cityName }} {{ popupData.countyName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">经纬度:</span>
+                <span class="value">{{ popupData.longitude }}, {{ popupData.latitude }}</span>
               </div>
               <div class="info-item">
                 <span class="label">成井深度:</span>
-                <span class="value">{{ popupData.well_depth }}</span>
+                <span class="value">{{ popupData.wellDepth || popupData.well_depth }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">水位埋深:</span>
+                <span class="value">{{ popupData.waterLevelDepth || popupData.water_level_depth }}</span>
               </div>
               <div class="info-item">
                 <span class="label">井口高程:</span>
-                <span class="value">{{ popupData.well_head_elevation }}</span>
+                <span class="value">{{ popupData.wellheadElevation || popupData.well_head_elevation }}</span>
               </div>
               <div class="info-item">
                 <span class="label">井管材质:</span>
-                <span class="value">{{ popupData.well_pipe_material }}</span>
+                <span class="value">{{ popupData.wellPipeMaterial || popupData.well_pipe_material }}</span>
               </div>
               <div class="info-item">
                 <span class="label">权属单位:</span>
-                <span class="value">{{ popupData.well_ownership_unit }}</span>
+                <span class="value">{{ popupData.wellOwnershipUnit || popupData.well_ownership_unit }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">埋藏条件:</span>
+                <span class="value">{{ popupData.burialCondition }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">含水层介质:</span>
+                <span class="value">{{ popupData.aquiferMedium }}</span>
               </div>
               <div class="info-item">
                 <span class="label">区域监测点:</span>
-                <span class="value">{{ popupData.is_regional_monitoring_point }}</span>
+                <span class="value">{{ popupData.isAreaMonitoringPoint || popupData.is_regional_monitoring_point }}</span>
               </div>
               <div class="info-item">
                 <span class="label">水源监测点:</span>
-                <span class="value">{{ popupData.is_water_source_monitoring_point }}</span>
+                <span class="value">{{ popupData.isWaterSourceMonitoringPoint || popupData.is_water_source_monitoring_point }}</span>
               </div>
               <div class="info-item">
                 <span class="label">污染源监测点:</span>
-                <span class="value">{{ popupData.is_pollution_source_monitoring_point }}</span>
+                <span class="value">{{ popupData.isPollutionSourceMonitoringPoint || popupData.is_pollution_source_monitoring_point }}</span>
+              </div>
+              <div v-if="popupData.pollutionSourceInfo && popupData.pollutionSourceInfo !== '无'" class="info-item">
+                <span class="label">污染源信息:</span>
+                <span class="value">{{ popupData.pollutionSourceInfo }}</span>
               </div>
               <div class="info-item">
                 <span class="label">符合长期监测要求:</span>
-                <span class="value">{{ popupData.meets_long_term_monitoring_requirements }}</span>
+                <span class="value">{{ popupData.isSuitableForLongTermMonitoring || popupData.meets_long_term_monitoring_requirements }}</span>
               </div>
               <div class="info-item">
                 <span class="label">开展维护管理:</span>
-                <span class="value">{{ popupData.has_maintenance_management }}</span>
+                <span class="value">{{ popupData.isMaintenanceManagementCarriedOut || popupData.has_maintenance_management }}</span>
               </div>
               <div class="info-item">
                 <span class="label">实际维护单位:</span>
-                <span class="value">{{ popupData.actual_maintenance_unit }}</span>
+                <span class="value">{{ popupData.actualMaintenanceManagementUnit || popupData.actual_maintenance_unit }}</span>
+              </div>
+              <div v-if="popupData.error" class="info-item error">
+                <span class="label">错误信息:</span>
+                <span class="value">{{ popupData.error }}</span>
               </div>
             </div>
             
@@ -167,8 +191,9 @@
   </template>
   
   <script>
-  import { OlMap } from '@/olmap/index'
-  import BasemapSwitcher from './BasemapSwitcher.vue'
+import { OlMap } from '@/olmap/index'
+import BasemapSwitcher from './BasemapSwitcher.vue'
+import { getMonitorWellInfo } from '@/api'
 
   export default {
     components: {
@@ -238,28 +263,52 @@
             
             // 检查是否为监测井数据
             if (data.well_code) {
-              // 监测井弹窗数据
-              this.popupData = {
-                name: '监测井信息',
-                well_code: data.well_code || '未知',
-                project_code: data.project_code || '未知',
-                water_level_depth: data.water_level_depth ? `${data.water_level_depth}m` : '未知',
-                well_depth: data.well_depth ? `${data.well_depth}m` : '未知',
-                well_head_elevation: data.well_head_elevation ? `${data.well_head_elevation}m` : '未知',
-                well_pipe_material: data.well_pipe_material || '未知',
-                well_ownership_unit: data.well_ownership_unit || '未知',
-                is_regional_monitoring_point: data.is_regional_monitoring_point ? '是' : '否',
-                is_water_source_monitoring_point: data.is_water_source_monitoring_point ? '是' : '否',
-                is_pollution_source_monitoring_point: data.is_pollution_source_monitoring_point ? '是' : '否',
-                meets_long_term_monitoring_requirements: data.meets_long_term_monitoring_requirements ? '是' : '否',
-                has_maintenance_management: data.has_maintenance_management ? '是' : '否',
-                actual_maintenance_unit: data.actual_maintenance_unit || '未知'
-              };
-              
-              // 设置弹窗显示后应用样式
-              this.$nextTick(() => {
-                this.applyValueStyles();
-              });
+              try {
+                // 调用监测井详细信息接口
+                const response = await getMonitorWellInfo(data.well_code);
+                const wellData = response.data || response;
+                
+                // 根据接口返回的字段展示关键信息
+                this.popupData = {
+                  name: '监测井详细信息',
+                  wellCode: wellData.wellCode || '未知',
+                  projectId: wellData.projectId || '未知',
+                  provinceName: wellData.provinceName || '未知',
+                  cityName: wellData.cityName || '未知',
+                  countyName: wellData.countyName || '未知',
+                  longitude: wellData.longitude || '未知',
+                  latitude: wellData.latitude || '未知',
+                  wellDepth: wellData.wellDepth ? `${wellData.wellDepth}m` : '未知',
+                  waterLevelDepth: wellData.waterLevelDepth ? `${wellData.waterLevelDepth}m` : '未知',
+                  wellheadElevation: wellData.wellheadElevation ? `${wellData.wellheadElevation}m` : '未知',
+                  wellPipeMaterial: wellData.wellPipeMaterial || '未知',
+                  wellOwnershipUnit: wellData.wellOwnershipUnit || '未知',
+                  burialCondition: wellData.burialCondition || '未知',
+                  aquiferMedium: wellData.aquiferMedium || '未知',
+                  isAreaMonitoringPoint: wellData.isAreaMonitoringPoint ? '是' : '否',
+                  isWaterSourceMonitoringPoint: wellData.isWaterSourceMonitoringPoint ? '是' : '否',
+                  isPollutionSourceMonitoringPoint: wellData.isPollutionSourceMonitoringPoint ? '是' : '否',
+                  pollutionSourceInfo: wellData.pollutionSourceInfo || '无',
+                  isSuitableForLongTermMonitoring: wellData.isSuitableForLongTermMonitoring ? '是' : '否',
+                  isMaintenanceManagementCarriedOut: wellData.isMaintenanceManagementCarriedOut ? '是' : '否',
+                  actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知'
+                };
+                
+                // 设置弹窗显示后应用样式
+                this.$nextTick(() => {
+                  this.applyValueStyles();
+                });
+              } catch (error) {
+                console.error('获取监测井详细信息失败:', error);
+                // 如果接口调用失败，使用基础信息
+                this.popupData = {
+                  name: '监测井信息',
+                  wellCode: data.well_code || '未知',
+                  longitude: data.longitude || '未知',
+                  latitude: data.latitude || '未知',
+                  error: '获取详细信息失败'
+                };
+              }
             } else {
               
             }
@@ -371,6 +420,20 @@
       closePopup() {
         this.showPopup = false;
         this.popupData = null;
+      },
+      // 对外提供：定位到指定图层
+      // layerName: 'marker' | 'geom'
+      fitToLayer(layerName) {
+        if (!this.mapInstance || !this.mapInstance.view) return;
+        let extent;
+        if (layerName === 'marker' && this.mapInstance.markerLayer) {
+          extent = this.mapInstance.markerLayer.getExtent && this.mapInstance.markerLayer.getExtent();
+        } else if (layerName === 'geom' && this.mapInstance.geomLayer) {
+          extent = this.mapInstance.geomLayer.getExtent && this.mapInstance.geomLayer.getExtent();
+        }
+        if (extent && extent[0] !== Infinity && extent[2] !== -Infinity) {
+          this.mapInstance.view.fitExtent(extent, { duration: 500, padding: 50 });
+        }
       },
       // 应用值样式
       applyValueStyles() {

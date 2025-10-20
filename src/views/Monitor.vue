@@ -9,6 +9,7 @@
 <script>
     import ScreenMap from '@/components/ScreenMap.vue'
     import WaterQualityMenu from '@/components/WaterQualityMenu.vue'
+    import { getMonitorWellSpatial } from '@/api'
 
 
     export default {
@@ -30,11 +31,17 @@
                 this.drawGeom();
                 this.loadWellData();
             },
-            // 加载监测井数据
-            loadWellData() {
+            // 加载监测井数据（通过空间查询接口）
+            async loadWellData() {
+                if (!this.mapInstance || !this.mapInstance.view) {
+                    console.warn('地图实例未就绪');
+                    return;
+                }
                 try {
-                    const wellDataRaw = require('@/assets/data/well_data.json');
-                    this.wellData = this.processWellData(wellDataRaw.data);
+                    const res = await getMonitorWellSpatial();
+                    // 根据 request.js 的响应拦截器，这里 res 是后端响应体
+                    const rawData = Array.isArray(res.data) ? res.data : res; // 兼容两种结构
+                    this.wellData = this.processWellData(rawData);
                     console.log('监测井数据加载完成，共', this.wellData.length, '个监测井');
                 } catch (error) {
                     console.error('加载监测井数据失败:', error);
@@ -42,40 +49,30 @@
             },
             // 处理监测井数据格式
             processWellData(rawData) {
-                return rawData.map((well) => {
+                const parsePointWKT = (wkt) => {
+                    // 支持格式: POINT(112.016666 43.54075)
+                    if (!wkt || typeof wkt !== 'string') return null;
+                    const match = wkt.trim().match(/^POINT\s*\(\s*([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s*\)$/i);
+                    if (!match) return null;
+                    const lon = Number(match[1]);
+                    const lat = Number(match[2]);
+                    if (Number.isNaN(lon) || Number.isNaN(lat)) return null;
+                    return [lon, lat];
+                };
+
+                return (rawData || []).map((well) => {
+                    const coordsFromWkt = parsePointWKT(well.geom);
+                    const coordinates = coordsFromWkt || [well.longitude, well.latitude];
                     return {
-                        coordinates: [well.longitude, well.latitude],
+                        coordinates,
                         properties: {
-                            well_code: well.well_code,
-                            province: well.province,
-                            city: well.city,
-                            county: well.county,
-                            project_code: well.project_code,
-                            water_level_depth: well.water_level_depth,
-                            well_depth: well.well_depth,
-                            well_head_elevation: well.well_head_elevation,
-                            well_pipe_material: well.well_pipe_material,
-                            well_ownership_unit: well.well_ownership_unit,
-                            is_regional_monitoring_point: well.is_regional_monitoring_point,
-                            is_water_source_monitoring_point: well.is_water_source_monitoring_point,
-                            is_pollution_source_monitoring_point: well.is_pollution_source_monitoring_point,
-                            meets_long_term_monitoring_requirements: well.meets_long_term_monitoring_requirements,
-                            converted_to_long_term_monitoring: well.converted_to_long_term_monitoring,
-                            has_maintenance_management: well.has_maintenance_management,
-                            actual_maintenance_unit: well.actual_maintenance_unit,
-                            non_long_term_well_sealed: well.non_long_term_well_sealed,
-                            sealing_status: well.sealing_status
+                            well_code: well.wellCode || well.well_code,
+                            longitude: coordinates && coordinates[0],
+                            latitude: coordinates && coordinates[1]
                         },
                         style: {
-                            shapeType: 0, // 圆形
-                            fill: {
-                                color: '#3B82F6' // 蓝色
-                            },
-                            stroke: {
-                                color: '#FFFFFF',
-                                width: 2
-                            },
-                            radius: 6
+                            iconUrl: require('@/assets/well-icon.svg'),
+                            iconAnchor: [0.5, 0.5]
                         }
                     };
                 });
@@ -134,6 +131,28 @@
                 
                 // 添加监测井标记
                 this.wellLayer.addMarkers(this.wellData);
+                // addMarkers返回的是feature数组，获取这些feature的范围然后地图定位
+                const features = this.wellLayer.addMarkers(this.wellData);
+
+                if (features && features.length > 0) {
+                    // 提取所有feature的geometry，计算范围
+                    const extents = features
+                        .map(f => f.getGeometry().getExtent())
+                        .filter(e => Array.isArray(e));
+                    // 合并所有范围
+                    let bbox = extents[0];
+                    for (let i = 1; i < extents.length; i++) {
+                        bbox = [
+                          Math.min(bbox[0], extents[i][0]),
+                          Math.min(bbox[1], extents[i][1]),
+                          Math.max(bbox[2], extents[i][2]),
+                          Math.max(bbox[3], extents[i][3]),
+                        ];
+                    }
+                    // 用fit使地图定位到所有监测井
+                    this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
+                }
+                
                 console.log('监测井标记已添加到地图');
             },
             // 隐藏监测井
