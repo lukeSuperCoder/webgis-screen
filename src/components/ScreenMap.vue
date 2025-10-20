@@ -36,7 +36,47 @@
       </button>
       </div>
 
-      <!-- 弹出框 -->
+      <!-- 右侧固定信息面板（单项分布使用） -->
+      <div v-if="sidePanel.visible" class="side-panel">
+        <div class="side-header">
+          <div class="title">{{ sidePanel.title }}</div>
+          <button class="close-btn" @click="closeSidePanel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="side-body">
+          <div class="filters">
+            <div class="row">
+              <span>时间:</span>
+              <input type="date"/>
+              <span>至</span>
+              <input type="date"/>
+            </div>
+          </div>
+          <div class="table">
+            <div class="thead">
+              <span>井点编号</span>
+              <span>{{ sidePanel.metricLabel }}</span>
+              <span>时间</span>
+            </div>
+            <div class="tbody">
+              <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
+                <span>{{ row.code }}</span>
+                <span>{{ row.value }}</span>
+                <span>{{ row.time }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart">
+            <div ref="sideChart" style="width:100%;height:220px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 弹出框（综合水质与井点信息等） -->
       <div v-if="showPopup" class="popup-container" :style="popupStyle">
         <div class="popup-content">
           <div class="popup-header">
@@ -49,8 +89,32 @@
             </button>
           </div>
           <div class="popup-body">
+            <!-- 综合水质分布弹框 -->
+            <div v-if="popupData && popupData.metrics && popupData.overallClass" class="comprehensive-info">
+              <div class="info-row">
+                <span class="label">时间:</span>
+                <span class="value">{{ popupData.measureTime }}</span>
+                <span class="label" style="margin-left:12px;">综合水质:</span>
+                <span class="value">{{ popupData.overallClass }}</span>
+              </div>
+              <div class="grid">
+                <div class="cell"><span class="label">水温:</span><span class="value">{{ popupData.metrics.waterTemp }}</span></div>
+                <div class="cell"><span class="label">浊度:</span><span class="value">{{ popupData.metrics.turbidity }}</span></div>
+                <div class="cell"><span class="label">pH:</span><span class="value">{{ popupData.metrics.ph }}</span></div>
+                <div class="cell"><span class="label">溶解氧:</span><span class="value">{{ popupData.metrics.dissolvedOxygen }}</span></div>
+                <div class="cell"><span class="label">电导率:</span><span class="value">{{ popupData.metrics.conductivity }}</span></div>
+                <div class="cell"><span class="label">叶绿素a:</span><span class="value">{{ popupData.metrics.chlorophyllA }}</span></div>
+                <div class="cell"><span class="label">蓝绿藻:</span><span class="value">{{ popupData.metrics.cyanobacteria }}</span></div>
+                <div class="cell"><span class="label">高锰酸盐指数:</span><span class="value">{{ popupData.metrics.permanganateIndex.value }}<span v-if="popupData.metrics.permanganateIndex.class">（{{ popupData.metrics.permanganateIndex.class }}）</span></span></div>
+                <div class="cell"><span class="label">总磷值:</span><span class="value">{{ popupData.metrics.totalPhosphorus.value }}<span v-if="popupData.metrics.totalPhosphorus.class">（{{ popupData.metrics.totalPhosphorus.class }}）</span></span></div>
+                <div class="cell"><span class="label">氨氮:</span><span class="value">{{ popupData.metrics.ammoniaNitrogen.value }}<span v-if="popupData.metrics.ammoniaNitrogen.class">（{{ popupData.metrics.ammoniaNitrogen.class }}）</span></span></div>
+                <div class="cell"><span class="label">总氮:</span><span class="value">{{ popupData.metrics.totalNitrogen }}</span></div>
+                <div class="cell"><span class="label">总铁:</span><span class="value">{{ popupData.metrics.totalIron }}</span></div>
+              </div>
+            </div>
+            
             <!-- 监测井信息 -->
-            <div v-if="popupData.wellCode || popupData.well_code" class="well-info">
+            <div v-else-if="popupData.wellCode || popupData.well_code" class="well-info">
               <div class="info-item">
                 <span class="label">监测井编码:</span>
                 <span class="value">{{ popupData.wellCode || popupData.well_code }}</span>
@@ -156,6 +220,15 @@
         </div>
       </div>
 
+      <!-- 图例 -->
+      <div class="legend" v-if="showLegend && legendItems && legendItems.length">
+        <div class="legend-title">水质类别</div>
+        <div class="legend-item" v-for="item in legendItems" :key="item.label">
+          <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
+          <span class="legend-label">{{ item.label }}</span>
+        </div>
+      </div>
+
       <!-- 底图切换面板 -->
       <BasemapSwitcher 
         v-if="mapInstance"
@@ -194,6 +267,7 @@
 import { OlMap } from '@/olmap/index'
 import BasemapSwitcher from './BasemapSwitcher.vue'
 import { getMonitorWellInfo } from '@/api'
+import * as echarts from 'echarts'
 
   export default {
     components: {
@@ -219,12 +293,29 @@ import { getMonitorWellInfo } from '@/api'
           51: '52'
         },
         currentBasemap: 'TIANDITU_VEC', // 当前底图
+        // 右侧面板
+        sidePanel: {
+          visible: false,
+          title: '',
+          metricLabel: 'pH',
+          table: [],
+          chartPoints: '20,150 80,120 140,70 200,40 260,90 320,130'
+        },
+        sideChartInstance: null
       };
     },
     props:{
       data:{
         type:Array,
         default:()=>[]
+      },
+      showLegend: {
+        type: Boolean,
+        default: false
+      },
+      legendItems: {
+        type: Array,
+        default: () => []
       }
     },
     computed: {},
@@ -261,6 +352,42 @@ import { getMonitorWellInfo } from '@/api'
             const data = featureData.properties;
             console.log('current click data', data);
             
+            // 单项水质分布：在右侧面板显示
+            if (data.popupType === 'singleItem') {
+              this.sidePanel.visible = true;
+              const label = data.parameter === 'ph' ? 'pH' : (data.parameter === 'phosphorus' ? '总磷值' : '指标');
+              this.sidePanel.title = `${data.projectName || '项目名称'}${data.wellCode ? ' ' + data.wellCode : ''}监测数据展板`;
+              this.sidePanel.metricLabel = label;
+              this.sidePanel.table = [
+                { code: data.wellCode, value: '7.5', time: '2025-10-20 17:48' },
+                { code: data.wellCode, value: '9.2', time: '2025-10-21 17:48' },
+                { code: data.wellCode, value: '8.2', time: '2025-10-22 17:48' },
+                { code: data.wellCode, value: '7.5', time: '2025-10-23 17:48' },
+                { code: data.wellCode, value: '5.5', time: '2025-10-24 17:48' }
+              ];
+              this.$nextTick(() => {
+                this.renderSideChart();
+              });
+              return; // 不再展示中心弹窗
+            }
+
+            // 综合水质分布：按设计图展示
+            if (data.popupType === 'comprehensive' && data.metrics) {
+              this.popupData = {
+                name: `${data.projectName || '项目名称'}  ${data.wellCode || ''}`,
+                measureTime: data.measureTime,
+                overallClass: data.overallClass,
+                metrics: data.metrics
+              };
+              this.showPopup = true;
+              const mapElement = document.getElementById('olmap');
+              const rect = mapElement.getBoundingClientRect();
+              const x = event.pixel[0] - rect.left;
+              const y = event.pixel[1] - rect.top - 10;
+              this.popupStyle = { top: `${y}px`, left: `${x}px` };
+              return;
+            }
+
             // 检查是否为监测井数据
             if (data.well_code) {
               try {
@@ -354,6 +481,44 @@ import { getMonitorWellInfo } from '@/api'
             };
           }
         });
+      },
+      closeSidePanel() {
+        this.sidePanel.visible = false;
+        if (this.sideChartInstance) {
+          this.sideChartInstance.dispose();
+          this.sideChartInstance = null;
+        }
+      },
+      renderSideChart() {
+        const el = this.$refs.sideChart;
+        if (!el) return;
+        const times = (this.sidePanel.table || []).map(r => r.time);
+        const values = (this.sidePanel.table || []).map(r => parseFloat(String(r.value)));
+        if (this.sideChartInstance) {
+          this.sideChartInstance.dispose();
+        }
+        this.sideChartInstance = echarts.init(el);
+        const option = {
+          grid: { left: 40, right: 16, top: 20, bottom: 28 },
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: times, axisLabel: { color: '#64748b' } },
+          yAxis: { type: 'value', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(0,0,0,0.08)' } } },
+          series: [{
+            name: this.sidePanel.metricLabel,
+            type: 'line',
+            data: values,
+            smooth: true,
+            symbolSize: 6,
+            lineStyle: { width: 3, color: '#3b82f6' },
+            itemStyle: { color: '#3b82f6' },
+            areaStyle: { color: 'rgba(59,130,246,0.08)' }
+          }]
+        };
+        this.sideChartInstance.setOption(option);
+        // 自适应
+        setTimeout(() => {
+          if (this.sideChartInstance) this.sideChartInstance.resize();
+        }, 0);
       },
       async getListById(id){
         // TODO: 实现API调用逻辑
@@ -499,6 +664,15 @@ import { getMonitorWellInfo } from '@/api'
       this.startDate = new Date();
       this.endDate = new Date();
       this.endDate.setDate(this.endDate.getDate() + 47);
+      // 图例项
+      this.legendItems = [
+        { label: 'I类', color: '#22a6f2' },
+        { label: 'II类', color: '#28d6f7' },
+        { label: 'III类', color: '#b7e532' },
+        { label: 'IV类', color: '#f3d231' },
+        { label: 'V类', color: '#ff8c31' },
+        { label: '劣V类', color: '#ff2a1a' }
+      ];
     },
     mounted() {
       this.initMap();
@@ -556,6 +730,39 @@ import { getMonitorWellInfo } from '@/api'
     width: 16px;
     height: 16px;
   }
+
+  /* 图例样式 */
+  .legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 3000;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    min-width: 120px;
+  }
+  .legend-title {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+  }
+  .legend-color {
+    width: 18px;
+    height: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.15);
+    display: inline-block;
+  }
+  .legend-label { font-size: 12px; color: #333; }
 
   /* 弹出框样式 */
   .popup-container {
@@ -649,6 +856,61 @@ import { getMonitorWellInfo } from '@/api'
     padding: 20px;
     max-height: 200px;
     overflow-y: auto;
+  }
+
+  /* 右侧固定面板 */
+  .side-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: 360px;
+    background: rgba(255,255,255,0.98);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+  }
+  .side-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .side-header .title { font-weight: 700; color:#1f2937; }
+  .side-body { padding: 12px 14px; overflow: auto; }
+  .filters .row { display:flex; align-items:center; gap:8px; margin-bottom: 10px; }
+  .table { border:1px solid rgba(0,0,0,0.06); border-radius:8px; overflow:hidden; }
+  .thead, .tr { display:grid; grid-template-columns: 1fr 60px 1.2fr; }
+  .thead { background:#f9fafb; font-weight:600; color:#374151; }
+  .thead span, .tr span { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .chart { margin-top: 12px; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:8px; }
+
+  /* 综合水质分布样式 */
+  .comprehensive-info .info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .comprehensive-info .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    background: rgba(59,130,246,0.03);
+    padding: 6px;
+    border-radius: 8px;
+  }
+  .comprehensive-info .cell {
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid rgba(59,130,246,0.12);
+    padding: 6px 10px;
+    border-radius: 6px;
   }
 
   .popup-body::-webkit-scrollbar {

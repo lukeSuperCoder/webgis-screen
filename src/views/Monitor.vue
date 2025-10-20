@@ -2,7 +2,12 @@
     <div class="monitor-page">
         <WaterQualityMenu @parameter-selected="handleParameterSelected" @menu-clicked="handleMenuClicked"
             @boundary-toggle="handleBoundaryToggle" @wells-toggle="handleWellsToggle" />
-        <ScreenMap @map-ready="handleMapReady" @date-changed="handleDateChanged" />
+        <ScreenMap 
+            @map-ready="handleMapReady" 
+            @date-changed="handleDateChanged" 
+            :show-legend="showLegend" 
+            :legend-items="legendItems"
+        />
     </div>
 </template>
 
@@ -22,7 +27,9 @@
                 mapInstance: null,
                 wellLayer: null,
                 wellData: null,
-                wellsVisible: false
+                wellsVisible: false,
+                showLegend: false,
+                legendItems: []
             }
         },
         methods: {
@@ -31,21 +38,76 @@
                 this.drawGeom();
                 this.loadWellData();
             },
+            // 生成单项分布（ph、phosphorus）的模拟点位
+            generateSingleParameterMock(parameter) {
+                var src = require('@/assets/data/well_data.json');
+                if (parameter === 'ph') {
+                    src = src.slice(0, 20);
+                } else if (parameter === 'phosphorus') {
+                    src = src.slice(20, 50);
+                }
+                const colorMap = {
+                    ph: '#3b82f6',
+                    phosphorus: '#8b5cf6'
+                };
+                const toVal = (m) => {
+                    if (parameter === 'ph') return m.ph;
+                    if (parameter === 'phosphorus') return (m.totalPhosphorus && m.totalPhosphorus.value) || '';
+                    return '';
+                };
+                return (src || []).map((item) => {
+                    const value = toVal(item.properties.metrics || {});
+                    return {
+                        coordinates: item.coordinates,
+                        properties: {
+                            popupType: 'singleItem',
+                            parameter,
+                            projectName: item.properties.projectName,
+                            wellCode: item.properties.wellCode,
+                            measureTime: item.properties.measureTime,
+                            value
+                        },
+                        style: {
+                            shapeType: 0,
+                            radius: 7,
+                            fillColor: colorMap[parameter] || '#3b82f6',
+                            strokeColor: '#ffffff',
+                            strokeWidth: 2
+                        }
+                    };
+                });
+            },
+            // 清除所有业务图层与图例
+            clearAllLayersAndLegend() {
+                if (this.mapInstance) {
+                    if (this.mapInstance.markerLayer) {
+                        this.mapInstance.markerLayer.clearMarkers();
+                    }
+                    // 注意：面数据（项目范围）初始化加载后不再清除
+                }
+                this.showLegend = false;
+                this.legendItems = [];
+            },
+            // 生成“综合水质分布”模拟数据
+            generateComprehensiveMock() {
+                var markers = require('@/assets/data/well_data.json')
+                return markers;
+            },
             // 加载监测井数据（通过空间查询接口）
-            async loadWellData() {
+            loadWellData() {
                 if (!this.mapInstance || !this.mapInstance.view) {
                     console.warn('地图实例未就绪');
                     return;
                 }
-                try {
-                    const res = await getMonitorWellSpatial();
-                    // 根据 request.js 的响应拦截器，这里 res 是后端响应体
-                    const rawData = Array.isArray(res.data) ? res.data : res; // 兼容两种结构
-                    this.wellData = this.processWellData(rawData);
-                    console.log('监测井数据加载完成，共', this.wellData.length, '个监测井');
-                } catch (error) {
-                    console.error('加载监测井数据失败:', error);
-                }
+                getMonitorWellSpatial()
+                    .then((res) => {
+                        const rawData = Array.isArray(res && res.data) ? res.data : res;
+                        this.wellData = this.processWellData(rawData);
+                        console.log('监测井数据加载完成，共', this.wellData.length, '个监测井');
+                    })
+                    .catch((error) => {
+                        console.error('加载监测井数据失败:', error);
+                    });
             },
             // 处理监测井数据格式
             processWellData(rawData) {
@@ -96,26 +158,108 @@
                 // console.log('时间轴变化')
             },
             handleParameterSelected(parameter) {
-                console.log('选择的水质参数:', parameter)
-                // 这里可以添加处理水质参数选择的逻辑
+                // 仅在子菜单选择具体参数时切换对应图层
+                if (!['ph','phosphorus'].includes(parameter)) return;
+                this.clearAllLayersAndLegend();
+                if (!this.mapInstance) return;
+                const points = this.generateSingleParameterMock(parameter);
+                const layer = this.mapInstance.markerLayer;
+                const features = layer.addMarkers(points);
+                if (features && features.length > 0) {
+                    const extents = features
+                        .map(f => f.getGeometry().getExtent())
+                        .filter(e => Array.isArray(e));
+                    let bbox = extents[0];
+                    for (let i = 1; i < extents.length; i++) {
+                        bbox = [
+                            Math.min(bbox[0], extents[i][0]),
+                            Math.min(bbox[1], extents[i][1]),
+                            Math.max(bbox[2], extents[i][2]),
+                            Math.max(bbox[3], extents[i][3])
+                        ];
+                    }
+                    this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
+                }
             },
             handleMenuClicked(menuType) {
                 console.log('菜单点击:', menuType)
-                // 这里可以添加处理菜单点击的逻辑
+                // 仅三类切换：综合水质分布、PH值、总磷值;
+                // 单项水质分布按钮本身不触发任何切换
+                if (!['comprehensive','ph','phosphorus'].includes(menuType)) {
+                    return;
+                }
+                // 切换前清空所有图层与图例
+                this.clearAllLayersAndLegend();
+
+                if (menuType === 'comprehensive') {
+                    // 展示一批综合水质分布的 marker（模拟数据）
+                    if (!this.mapInstance) return;
+                    const points = this.generateComprehensiveMock().map(p => {
+                        const cls = p.properties && p.properties.overallClass;
+                        const color = this.getClassColor(cls);
+                        return Object.assign({}, p, {
+                            style: {
+                                shapeType: 0,
+                                radius: 7,
+                                fillColor: color,
+                                strokeColor: '#ffffff',
+                                strokeWidth: 2
+                            }
+                        });
+                    });
+                    const layer = this.mapInstance.markerLayer;
+                    layer.clearMarkers();
+                    // 打开图例
+                    this.legendItems = [
+                        { label: 'I类', color: this.getClassColor('I类') },
+                        { label: 'II类', color: this.getClassColor('II类') },
+                        { label: 'III类', color: this.getClassColor('III类') },
+                        { label: 'IV类', color: this.getClassColor('IV类') },
+                        { label: 'V类', color: this.getClassColor('V类') },
+                        { label: '劣V类', color: this.getClassColor('劣V类') },
+                    ];
+                    this.showLegend = true;
+                    const features = layer.addMarkers(points);
+                    if (features && features.length > 0) {
+                        // 视图定位到这些点
+                        const extents = features
+                            .map(f => f.getGeometry().getExtent())
+                            .filter(e => Array.isArray(e));
+                        let bbox = extents[0];
+                        for (let i = 1; i < extents.length; i++) {
+                            bbox = [
+                                Math.min(bbox[0], extents[i][0]),
+                                Math.min(bbox[1], extents[i][1]),
+                                Math.max(bbox[2], extents[i][2]),
+                                Math.max(bbox[3], extents[i][3])
+                            ];
+                        }
+                        this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
+                    }
+                }
+            },
+            // 水质类别 -> 颜色映射（与图例一致）
+            getClassColor(className) {
+                switch (className) {
+                    case 'I类': return '#22a6f2';      // 蓝
+                    case 'II类': return '#28d6f7';     // 青
+                    case 'III类': return '#b7e532';    // 黄绿色
+                    case 'IV类': return '#f3d231';     // 黄
+                    case 'V类': return '#ff8c31';      // 橙
+                    case '劣V类': return '#ff2a1a';    // 红
+                    default: return '#999999';
+                }
             },
             handleBoundaryToggle(show) {
-                console.log('项目边界范围切换:', show)
-                // 这里可以添加显示/隐藏项目边界的逻辑
+                // 面数据独立于切换逻辑，初始化即加载，不再清除；此勾选暂不影响显示
+                console.log('项目边界范围切换(已忽略清除/重绘):', show)
             },
             handleWellsToggle(show) {
                 console.log('监测井分布切换:', show)
                 this.wellsVisible = show;
-                
-                if (show) {
-                    this.showWells();
-                } else {
-                    this.hideWells();
-                }
+                // 勾选切换前清空全部，并关闭图例
+                this.clearAllLayersAndLegend();
+                if (show) this.showWells();
             },
             // 显示监测井
             showWells() {
