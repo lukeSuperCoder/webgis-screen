@@ -76,6 +76,57 @@
         </div>
       </div>
 
+      <!-- 监测井信息面板（右侧固定） -->
+      <div v-if="wellInfoPanel.visible" class="well-info-panel">
+        <div class="well-header">
+          <div class="title">监测井信息展板</div>
+          <button class="close-btn" @click="closeWellInfoPanel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="well-body">
+          <!-- 监测井基本信息表格 -->
+          <div class="well-info-table">
+            <div class="info-row">
+              <div class="info-cell">
+                <span class="label">井点编号</span>
+                <span class="value">{{ wellInfoPanel.data?.wellCode || wellInfoPanel.data?.well_code || '130123J0202' }}</span>
+              </div>
+              <div class="info-cell">
+                <span class="label">监测点类型</span>
+                <span class="value">{{ wellInfoPanel.data?.wellType || '省级' }}</span>
+              </div>
+              <div class="info-cell">
+                <span class="label">成井时间</span>
+                <span class="value">{{ wellInfoPanel.data?.completionTime || '2023-05-20 19:25' }}</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-cell">
+                <span class="label">埋藏条件</span>
+                <span class="value">{{ wellInfoPanel.data?.burialCondition || '基岩' }}</span>
+              </div>
+              <div class="info-cell">
+                <span class="label">监测位置</span>
+                <span class="value">{{ wellInfoPanel.data?.monitoringLocation || '下游' }}</span>
+              </div>
+              <div class="info-cell">
+                <span class="label">备注</span>
+                <span class="value">{{ wellInfoPanel.data?.remarks || '/' }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 监测井结构图 -->
+          <div class="well-structure">
+            <img src="@/assets/well.png" alt="监测井结构图" class="well-image" />
+          </div>
+        </div>
+      </div>
+
       <!-- 弹出框（综合水质与井点信息等） -->
       <div v-if="showPopup" class="popup-container" :style="popupStyle">
         <div class="popup-content">
@@ -222,10 +273,14 @@
 
       <!-- 图例 -->
       <div class="legend" v-if="showLegend && legendItems && legendItems.length">
-        <div class="legend-title">水质类别</div>
+        <div class="legend-title">{{ legendTitle }}</div>
+        <div class="legend-unit" v-if="legendUnit">{{ legendUnit }}</div>
         <div class="legend-item" v-for="item in legendItems" :key="item.label">
           <span class="legend-color" :style="{ backgroundColor: item.color }"></span>
-          <span class="legend-label">{{ item.label }}</span>
+          <div class="legend-content">
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-range" v-if="item.range">{{ item.range }}</span>
+          </div>
         </div>
       </div>
 
@@ -301,7 +356,12 @@ import * as echarts from 'echarts'
           table: [],
           chartPoints: '20,150 80,120 140,70 200,40 260,90 320,130'
         },
-        sideChartInstance: null
+        sideChartInstance: null,
+        // 监测井信息面板
+        wellInfoPanel: {
+          visible: false,
+          data: null
+        }
       };
     },
     props:{
@@ -316,6 +376,14 @@ import * as echarts from 'echarts'
       legendItems: {
         type: Array,
         default: () => []
+      },
+      legendTitle: {
+        type: String,
+        default: '水质类别'
+      },
+      legendUnit: {
+        type: String,
+        default: ''
       }
     },
     computed: {},
@@ -348,7 +416,7 @@ import * as echarts from 'echarts'
         // 点标记点击事件
         this.mapInstance.markerLayer.setOnClick(async (featureData, event) => {
           const zoom = this.mapInstance.view.getZoom();
-          if(featureData.type === 'marker' && featureData.properties){
+          if(featureData.type === 'marker' && featureData.properties && featureData.geometry[0]) {
             const data = featureData.properties;
             console.log('current click data', data);
             
@@ -395,10 +463,16 @@ import * as echarts from 'echarts'
                 const response = await getMonitorWellInfo(data.well_code);
                 const wellData = response.data || response;
                 
-                // 根据接口返回的字段展示关键信息
-                this.popupData = {
-                  name: '监测井详细信息',
-                  wellCode: wellData.wellCode || '未知',
+                // 显示监测井信息面板
+                this.wellInfoPanel.visible = true;
+                this.wellInfoPanel.data = {
+                  wellCode: wellData.wellCode || data.well_code || '130123J0202',
+                  wellType: data.wellType || '省级',
+                  completionTime: wellData.completionTime || '2023-05-20 19:25',
+                  burialCondition: wellData.burialCondition || '基岩',
+                  monitoringLocation: wellData.monitoringLocation || '下游',
+                  remarks: wellData.remarks || '/',
+                  // 保留其他详细信息以备后用
                   projectId: wellData.projectId || '未知',
                   provinceName: wellData.provinceName || '未知',
                   cityName: wellData.cityName || '未知',
@@ -410,7 +484,6 @@ import * as echarts from 'echarts'
                   wellheadElevation: wellData.wellheadElevation ? `${wellData.wellheadElevation}m` : '未知',
                   wellPipeMaterial: wellData.wellPipeMaterial || '未知',
                   wellOwnershipUnit: wellData.wellOwnershipUnit || '未知',
-                  burialCondition: wellData.burialCondition || '未知',
                   aquiferMedium: wellData.aquiferMedium || '未知',
                   isAreaMonitoringPoint: wellData.isAreaMonitoringPoint ? '是' : '否',
                   isWaterSourceMonitoringPoint: wellData.isWaterSourceMonitoringPoint ? '是' : '否',
@@ -420,21 +493,21 @@ import * as echarts from 'echarts'
                   isMaintenanceManagementCarriedOut: wellData.isMaintenanceManagementCarriedOut ? '是' : '否',
                   actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知'
                 };
-                
-                // 设置弹窗显示后应用样式
-                this.$nextTick(() => {
-                  this.applyValueStyles();
-                });
+                return; // 不显示中心弹框
               } catch (error) {
                 console.error('获取监测井详细信息失败:', error);
-                // 如果接口调用失败，使用基础信息
-                this.popupData = {
-                  name: '监测井信息',
-                  wellCode: data.well_code || '未知',
-                  longitude: data.longitude || '未知',
-                  latitude: data.latitude || '未知',
+                // 如果接口调用失败，使用基础信息显示面板
+                this.wellInfoPanel.visible = true;
+                this.wellInfoPanel.data = {
+                  wellCode: data.well_code || '130123J0202',
+                  wellType: data.wellType || '省级',
+                  completionTime: '2023-05-20 19:25',
+                  burialCondition: '基岩',
+                  monitoringLocation: '下游',
+                  remarks: '/',
                   error: '获取详细信息失败'
                 };
+                return; // 不显示中心弹框
               }
             } else {
               
@@ -452,6 +525,8 @@ import * as echarts from 'echarts'
               top: `${y}px`,
               left: `${x}px`
             };
+          } else {
+            this.showPopup = false;
           }
         });
 
@@ -488,6 +563,10 @@ import * as echarts from 'echarts'
           this.sideChartInstance.dispose();
           this.sideChartInstance = null;
         }
+      },
+      closeWellInfoPanel() {
+        this.wellInfoPanel.visible = false;
+        this.wellInfoPanel.data = null;
       },
       renderSideChart() {
         const el = this.$refs.sideChart;
@@ -747,11 +826,17 @@ import * as echarts from 'echarts'
   .legend-title {
     font-size: 13px;
     color: #333;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .legend-unit {
+    font-size: 11px;
+    color: #666;
     margin-bottom: 8px;
   }
   .legend-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     margin: 4px 0;
   }
@@ -761,8 +846,24 @@ import * as echarts from 'echarts'
     border-radius: 4px;
     border: 1px solid rgba(0,0,0,0.15);
     display: inline-block;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
-  .legend-label { font-size: 12px; color: #333; }
+  .legend-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .legend-label { 
+    font-size: 12px; 
+    color: #333; 
+    line-height: 1.2;
+  }
+  .legend-range {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.2;
+  }
 
   /* 弹出框样式 */
   .popup-container {
@@ -1008,6 +1109,164 @@ import * as echarts from 'echarts'
     font-weight: bold;
   }
 
+  /* 监测井信息面板样式 */
+  .well-info-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 500px;
+    height: 100vh;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 
+      -20px 0 40px rgba(0, 0, 0, 0.1),
+      -8px 0 16px rgba(0, 0, 0, 0.06),
+      inset 1px 0 0 rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .well-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.02);
+    flex-shrink: 0;
+  }
+
+  .well-header .title {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .well-header .title::before {
+    content: '🏗️';
+    font-size: 16px;
+  }
+
+  .well-body {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .well-info-table {
+    background: rgba(59, 130, 246, 0.03);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .well-info-table .info-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .well-info-table .info-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .well-info-table .info-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-height: 80px;
+  }
+
+  .well-info-table .info-cell:hover {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .well-info-table .label {
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .well-info-table .value {
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 15px;
+    word-break: break-word;
+    line-height: 1.4;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .well-structure {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFF;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    min-height: 300px;
+  }
+
+  .well-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .well-body::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .well-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+  }
+
+  .well-body::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+  }
+
+  .well-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
+
   /* 响应式设计 */
   @media (max-width: 768px) {
     .popup-container {
@@ -1031,6 +1290,20 @@ import * as echarts from 'echarts'
     .info-item .value {
       text-align: left;
       max-width: none;
+    }
+
+    .well-info-panel {
+      width: 100vw;
+    }
+
+    .well-info-table .info-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .well-info-table .info-cell {
+      min-height: 60px;
+      padding: 12px;
     }
   }
 

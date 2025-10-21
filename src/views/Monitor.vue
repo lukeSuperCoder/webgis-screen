@@ -1,26 +1,31 @@
 <template>
     <div class="monitor-page">
-        <WaterQualityMenu @parameter-selected="handleParameterSelected" @menu-clicked="handleMenuClicked"
+        <WaterQualityMenu ref="waterQualityMenu" @parameter-selected="handleParameterSelected" @menu-clicked="handleMenuClicked"
             @boundary-toggle="handleBoundaryToggle" @wells-toggle="handleWellsToggle" />
         <ScreenMap 
             @map-ready="handleMapReady" 
             @date-changed="handleDateChanged" 
             :show-legend="showLegend" 
             :legend-items="legendItems"
+            :legend-title="legendTitle"
+            :legend-unit="legendUnit"
         />
+        <MonitoringDataPanel v-if="showMonitoringPanel" @close="closeMonitoringPanel" />
     </div>
 </template>
 
 <script>
     import ScreenMap from '@/components/ScreenMap.vue'
     import WaterQualityMenu from '@/components/WaterQualityMenu.vue'
+    import MonitoringDataPanel from '@/components/MonitoringDataPanel.vue'
     import { getMonitorWellSpatial } from '@/api'
 
 
     export default {
         components: {
             ScreenMap,
-            WaterQualityMenu
+            WaterQualityMenu,
+            MonitoringDataPanel
         },
         data() {
             return {
@@ -28,8 +33,12 @@
                 wellLayer: null,
                 wellData: null,
                 wellsVisible: false,
+                boundaryVisible: false,
                 showLegend: false,
-                legendItems: []
+                legendItems: [],
+                legendTitle: '水质类别',
+                legendUnit: '',
+                showMonitoringPanel: false
             }
         },
         methods: {
@@ -47,8 +56,8 @@
                     src = src.slice(20, 50);
                 }
                 const colorMap = {
-                    ph: '#3b82f6',
-                    phosphorus: '#8b5cf6'
+                    ph: 'rgb(34, 166, 242)',
+                    phosphorus: 'rgb(183, 229, 50)'
                 };
                 const toVal = (m) => {
                     if (parameter === 'ph') return m.ph;
@@ -87,6 +96,8 @@
                 }
                 this.showLegend = false;
                 this.legendItems = [];
+                this.legendTitle = '水质类别';
+                this.legendUnit = '';
             },
             // 生成“综合水质分布”模拟数据
             generateComprehensiveMock() {
@@ -122,26 +133,48 @@
                     return [lon, lat];
                 };
 
-                return (rawData || []).map((well) => {
+                return (rawData || []).map((well, index) => {
                     const coordsFromWkt = parsePointWKT(well.geom);
                     const coordinates = coordsFromWkt || [well.longitude, well.latitude];
+                    
+                    // 根据索引或其他逻辑分配监测井类别（这里使用模拟逻辑）
+                    const wellTypes = ['国家级监测井', '国家级考察井', '省市级监测井', '防治区补充井', '背景值调查井'];
+                    const wellType = wellTypes[index % wellTypes.length];
+                    const wellColor = this.getWellTypeColor(wellType);
+                    
                     return {
                         coordinates,
                         properties: {
                             well_code: well.wellCode || well.well_code,
                             longitude: coordinates && coordinates[0],
-                            latitude: coordinates && coordinates[1]
+                            latitude: coordinates && coordinates[1],
+                            wellType: wellType
                         },
                         style: {
-                            iconUrl: require('@/assets/well-icon.svg'),
-                            iconAnchor: [0.5, 0.5]
+                            shapeType: 21,
+                            radius: 10,
+                            fillColor: wellColor,
+                            strokeWidth: 1
                         }
                     };
                 });
             },
             drawGeom() {
                 const data = require('@/assets/data/156150700.json');
-                this.mapInstance.geomLayer.drawGeoJSON(data, {
+                
+                // 为初始化数据添加标识
+                const dataWithId = {
+                    ...data,
+                    features: data.features.map(feature => ({
+                        ...feature,
+                        properties: {
+                            ...feature.properties,
+                            dataType: 'initial'
+                        }
+                    }))
+                };
+                
+                this.mapInstance.geomLayer.drawGeoJSON(dataWithId, {
                     style: {
                         stroke: {
                             color: '#744cd3',
@@ -164,6 +197,29 @@
                 if (!this.mapInstance) return;
                 const points = this.generateSingleParameterMock(parameter);
                 const layer = this.mapInstance.markerLayer;
+                
+                // 设置对应的图例
+                if (parameter === 'ph') {
+                    this.legendTitle = 'pH';
+                    this.legendUnit = '';
+                    this.legendItems = [
+                        { label: 'I类', color: '#22a6f2', range: '(6 ≤ a ≤ 9)' },
+                        { label: '劣V类', color: '#ff2a1a', range: '(a < 6 或 a > 9)' }
+                    ];
+                } else if (parameter === 'phosphorus') {
+                    this.legendTitle = '总磷';
+                    this.legendUnit = '单位: mg/L';
+                    this.legendItems = [
+                        { label: 'I类', color: '#22a6f2', range: '≤ 0.02' },
+                        { label: 'II类', color: '#28d6f7', range: '≤ 0.10' },
+                        { label: 'III类', color: '#b7e532', range: '≤ 0.20' },
+                        { label: 'IV类', color: '#f3d231', range: '≤ 0.30' },
+                        { label: 'V类', color: '#ff8c31', range: '≤ 0.40' },
+                        { label: '劣V类', color: '#ff2a1a', range: '> 0.40' }
+                    ];
+                }
+                this.showLegend = true;
+                
                 const features = layer.addMarkers(points);
                 if (features && features.length > 0) {
                     const extents = features
@@ -183,9 +239,9 @@
             },
             handleMenuClicked(menuType) {
                 console.log('菜单点击:', menuType)
-                // 仅三类切换：综合水质分布、PH值、总磷值;
+                // 仅四类切换：综合水质分布、PH值、总磷值、监测数据看板;
                 // 单项水质分布按钮本身不触发任何切换
-                if (!['comprehensive','ph','phosphorus'].includes(menuType)) {
+                if (!['comprehensive','ph','phosphorus','dashboard'].includes(menuType)) {
                     return;
                 }
                 // 切换前清空所有图层与图例
@@ -194,10 +250,18 @@
                 if (menuType === 'comprehensive') {
                     // 展示一批综合水质分布的 marker（模拟数据）
                     if (!this.mapInstance) return;
-                    const points = this.generateComprehensiveMock().map(p => {
+                    
+                    const mockData = this.generateComprehensiveMock();
+                    const points = [];
+                    
+                    for (let i = 0; i < mockData.length; i++) {
+                        const p = mockData[i];
                         const cls = p.properties && p.properties.overallClass;
                         const color = this.getClassColor(cls);
-                        return Object.assign({}, p, {
+                        
+                        points.push({
+                            coordinates: p.coordinates,
+                            properties: p.properties,
                             style: {
                                 shapeType: 0,
                                 radius: 7,
@@ -206,10 +270,14 @@
                                 strokeWidth: 2
                             }
                         });
-                    });
+                    }
+                    
                     const layer = this.mapInstance.markerLayer;
                     layer.clearMarkers();
+                    
                     // 打开图例
+                    this.legendTitle = '水质类别';
+                    this.legendUnit = '';
                     this.legendItems = [
                         { label: 'I类', color: this.getClassColor('I类') },
                         { label: 'II类', color: this.getClassColor('II类') },
@@ -219,6 +287,7 @@
                         { label: '劣V类', color: this.getClassColor('劣V类') },
                     ];
                     this.showLegend = true;
+                    
                     const features = layer.addMarkers(points);
                     if (features && features.length > 0) {
                         // 视图定位到这些点
@@ -236,6 +305,9 @@
                         }
                         this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
                     }
+                } else if (menuType === 'dashboard') {
+                    // 显示监测数据看板
+                    this.showMonitoringPanel = true;
                 }
             },
             // 水质类别 -> 颜色映射（与图例一致）
@@ -250,16 +322,106 @@
                     default: return '#999999';
                 }
             },
+            // 监测井类别 -> 颜色映射（与图例一致）
+            getWellTypeColor(wellType) {
+                switch (wellType) {
+                    case '国家级监测井': return '#ff8c31';      // 橙色
+                    case '国家级考察井': return '#22a6f2';      // 蓝色
+                    case '省市级监测井': return '#f3d231';      // 黄色
+                    case '防治区补充井': return '#b7e532';      // 绿色
+                    case '背景值调查井': return '#999999';      // 灰色
+                    default: return '#999999';
+                }
+            },
             handleBoundaryToggle(show) {
-                // 面数据独立于切换逻辑，初始化即加载，不再清除；此勾选暂不影响显示
-                console.log('项目边界范围切换(已忽略清除/重绘):', show)
+                console.log('项目边界范围切换:', show)
+                this.boundaryVisible = show;
+                if (show) {
+                    this.showBoundary();
+                } else {
+                    this.hideBoundary();
+                }
+            },
+            // 显示项目边界
+            showBoundary() {
+                if (!this.mapInstance) {
+                    console.warn('地图实例未就绪');
+                    return;
+                }
+                
+                try {
+                    const boundaryData = require('@/assets/data/bianjie.json');
+                    
+                    // 为边界数据添加标识
+                    const boundaryDataWithId = {
+                        ...boundaryData,
+                        features: boundaryData.features.map(feature => ({
+                            ...feature,
+                            properties: {
+                                ...feature.properties,
+                                dataType: 'boundary'
+                            }
+                        }))
+                    };
+                    
+                    // 绘制边界数据（不清除现有数据，直接添加）
+                    this.mapInstance.geomLayer.drawGeoJSON(boundaryDataWithId, {
+                        style: {
+                            stroke: {
+                                color: '#ff6b6b',
+                                width: 2
+                            },
+                            fill: {
+                                color: 'rgba(255, 107, 107, 0.1)'
+                            }
+                        },
+                        fit: false // 不自动调整视图
+                    });
+                    console.log('项目边界已显示');
+                } catch (error) {
+                    console.error('加载项目边界数据失败:', error);
+                }
+            },
+            // 隐藏项目边界
+            hideBoundary() {
+                if (this.mapInstance && this.mapInstance.geomLayer) {
+                    // 获取所有要素
+                    const features = this.mapInstance.geomLayer.getGeoms();
+                    
+                    // 只移除边界数据
+                    features.forEach(feature => {
+                        const properties = feature.getProperties();
+                        if (properties.dataType === 'boundary') {
+                            this.mapInstance.geomLayer.removeGeom(feature);
+                        }
+                    });
+                    
+                    console.log('项目边界已隐藏');
+                }
             },
             handleWellsToggle(show) {
                 console.log('监测井分布切换:', show)
                 this.wellsVisible = show;
                 // 勾选切换前清空全部，并关闭图例
                 this.clearAllLayersAndLegend();
-                if (show) this.showWells();
+                // 清除水质分布按钮的高亮状态
+                if (this.$refs.waterQualityMenu) {
+                    this.$refs.waterQualityMenu.clearAllHighlights();
+                }
+                if (show) {
+                    // 设置监测井图例
+                    this.legendTitle = '监测井类别';
+                    this.legendUnit = '';
+                    this.legendItems = [
+                        { label: '国家级监测井', color: '#ff8c31' },      // 橙色
+                        { label: '国家级考察井', color: '#22a6f2' },      // 蓝色
+                        { label: '省市级监测井', color: '#f3d231' },      // 黄色
+                        { label: '防治区补充井', color: '#b7e532' },      // 绿色
+                        { label: '背景值调查井', color: '#999999' }       // 灰色
+                    ];
+                    this.showLegend = true;
+                    this.showWells();
+                }
             },
             // 显示监测井
             showWells() {
@@ -304,6 +466,13 @@
                 if (this.wellLayer) {
                     this.wellLayer.clearMarkers();
                     console.log('监测井标记已清除');
+                }
+            },
+            closeMonitoringPanel() {
+                this.showMonitoringPanel = false;
+                // 清除按钮高亮状态
+                if (this.$refs.waterQualityMenu) {
+                    this.$refs.waterQualityMenu.clearAllHighlights();
                 }
             }
         }

@@ -20,6 +20,7 @@
 // 18: star10（十角星）
 // 19: ellipse（椭圆）
 // 20: custom（自定义，预留）
+// 21: circle with plus（圆形里面带加号）
 
 import { Feature } from 'ol';
 import { Point } from 'ol/geom';
@@ -198,6 +199,66 @@ class MarkerLayer {
   }
 
   /**
+   * 创建圆形里面带加号的样式
+   * @private
+   */
+  _createCirclePlusStyle(radius, fillColor, stroke) {
+    // 使用Canvas创建复合形状
+    const canvas = document.createElement('canvas');
+    const size = (radius + (stroke ? stroke.getWidth() : 0)) * 2 + 4;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    const centerX = size / 2;
+    const centerY = size / 2;
+    
+    // 绘制圆形
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    
+    // 填充圆形
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    
+    // 绘制圆形边框
+    if (stroke) {
+      ctx.strokeStyle = stroke.getColor();
+      ctx.lineWidth = stroke.getWidth();
+      ctx.stroke();
+    }
+    
+    // 绘制加号
+    const plusSize = radius * 0.6; // 加号大小为圆形的60%
+    const plusThickness = Math.max(2, radius * 0.15); // 加号线条粗细
+    
+    ctx.strokeStyle = stroke ? stroke.getColor() : '#FFFFFF';
+    ctx.lineWidth = plusThickness;
+    ctx.lineCap = 'round';
+    
+    // 绘制水平线
+    ctx.beginPath();
+    ctx.moveTo(centerX - plusSize, centerY);
+    ctx.lineTo(centerX + plusSize, centerY);
+    ctx.stroke();
+    
+    // 绘制垂直线
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - plusSize);
+    ctx.lineTo(centerX, centerY + plusSize);
+    ctx.stroke();
+    
+    // 创建Icon样式
+    return new Icon({
+      src: canvas.toDataURL(),
+      anchor: [0.5, 0.5],
+      anchorXUnits: 'fraction',
+      anchorYUnits: 'fraction',
+      scale: 1
+    });
+  }
+
+  /**
    * 创建自定义样式
    * @private
    */
@@ -273,6 +334,10 @@ class MarkerLayer {
         break;
       case 20: // custom（预留）
         imageStyle = new Circle({ radius, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 21: // circle with plus (圆形里面带加号)
+        // 创建圆形里面带加号的复合形状
+        imageStyle = this._createCirclePlusStyle(radius, fillColor, stroke);
         break;
       default:
         imageStyle = new Circle({ radius, fill: new Fill({ color: fillColor }), stroke });

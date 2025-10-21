@@ -118,6 +118,10 @@ export default {
         if (menuType !== 'singleItem') {
           this.activeMenuItem = menuType; 
         }
+        // 点击综合水质分布或监测数据看板时，取消子菜单高亮
+        if (menuType === 'comprehensive' || menuType === 'dashboard') {
+          this.selectedParameter = null;
+        }
       }
       this.childrenMenuVisible = false; // 关闭子菜单
       this.$emit('menu-clicked', menuType);
@@ -150,6 +154,12 @@ export default {
     
     handleWellsChange() {
       this.$emit('wells-toggle', this.showWells);
+    },
+    
+    // 清除所有高亮状态
+    clearAllHighlights() {
+      this.activeMenuItem = null;
+      this.selectedParameter = null;
     }
   },
   
