@@ -12,28 +12,15 @@
               clearable
             />
           </el-form-item>
-          <el-form-item label="省份:">
-            <el-input 
-              v-model="searchForm.provinceCode" 
-              placeholder="请输入省份代码"
-              style="width: 150px;"
+          <el-form-item label="地区:">
+            <el-cascader
+              v-model="searchForm.regionCodes"
+              :options="regionOptions"
+              :props="regionProps"
+              placeholder="请选择省市区"
+              style="width: 300px;"
               clearable
-            />
-          </el-form-item>
-          <el-form-item label="城市:">
-            <el-input 
-              v-model="searchForm.cityCode" 
-              placeholder="请输入城市代码"
-              style="width: 150px;"
-              clearable
-            />
-          </el-form-item>
-          <el-form-item label="区县:">
-            <el-input 
-              v-model="searchForm.countyCode" 
-              placeholder="请输入区县代码"
-              style="width: 150px;"
-              clearable
+              @change="handleRegionChange"
             />
           </el-form-item>
           <el-form-item label="井权单位:">
@@ -133,19 +120,22 @@
         </el-row>
         
         <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="省份代码" prop="provinceCode">
-              <el-input v-model="wellForm.provinceCode" placeholder="请输入省份代码"></el-input>
+          <el-col :span="12">
+            <el-form-item label="地区" prop="regionCodes">
+              <el-cascader
+                v-model="wellForm.regionCodes"
+                :options="regionOptions"
+                :props="regionProps"
+                placeholder="请选择省市区"
+                style="width: 100%;"
+                clearable
+                @change="handleWellFormRegionChange"
+              />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="城市代码" prop="cityCode">
-              <el-input v-model="wellForm.cityCode" placeholder="请输入城市代码"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="区县代码" prop="countyCode">
-              <el-input v-model="wellForm.countyCode" placeholder="请输入区县代码"></el-input>
+          <el-col :span="12">
+            <el-form-item label="详细地址">
+              <el-input v-model="wellForm.detailAddress" placeholder="请输入详细地址"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -244,6 +234,7 @@ import {
   getMonitorWellInfo,
   importMonitorWell
 } from '@/api/monitorWell'
+import { regionData, CodeToText, TextToCode } from 'element-china-area-data'
 
 export default {
   name: 'WellManagement',
@@ -252,6 +243,7 @@ export default {
       loading: false,
       searchForm: {
         wellCode: '',
+        regionCodes: [], // 省市县代码数组
         provinceCode: '',
         cityCode: '',
         countyCode: '',
@@ -259,6 +251,13 @@ export default {
         isWaterSourceMonitoringPoint: '',
         isPollutionSourceMonitoringPoint: '',
         wellOwnershipUnit: ''
+      },
+      // 省市县联动数据
+      regionOptions: regionData,
+      regionProps: {
+        value: 'value',
+        label: 'label',
+        children: 'children'
       },
       wellsData: [],
       total: 0,
@@ -269,9 +268,11 @@ export default {
       wellForm: {
         wellCode: '',
         projectId: '',
+        regionCodes: [], // 省市县代码数组
         provinceCode: '',
         cityCode: '',
         countyCode: '',
+        detailAddress: '', // 详细地址
         longitude: '',
         latitude: '',
         wellDepth: '',
@@ -305,14 +306,8 @@ export default {
         projectId: [
           { required: true, message: '请输入项目ID', trigger: 'blur' }
         ],
-        provinceCode: [
-          { required: true, message: '请输入省份代码', trigger: 'blur' }
-        ],
-        cityCode: [
-          { required: true, message: '请输入城市代码', trigger: 'blur' }
-        ],
-        countyCode: [
-          { required: true, message: '请输入区县代码', trigger: 'blur' }
+        regionCodes: [
+          { required: true, message: '请选择地区', trigger: 'change' }
         ],
         longitude: [
           { required: true, message: '请输入经度', trigger: 'blur' }
@@ -360,6 +355,7 @@ export default {
     handleReset() {
       this.searchForm = {
         wellCode: '',
+        regionCodes: [],
         provinceCode: '',
         cityCode: '',
         countyCode: '',
@@ -370,6 +366,30 @@ export default {
       }
       this.currentPage = 1
       this.loadWellsData()
+    },
+    // 搜索表单地区选择变化
+    handleRegionChange(value) {
+      if (value && value.length > 0) {
+        this.searchForm.provinceCode = value[0] || ''
+        this.searchForm.cityCode = value[1] || ''
+        this.searchForm.countyCode = value[2] || ''
+      } else {
+        this.searchForm.provinceCode = ''
+        this.searchForm.cityCode = ''
+        this.searchForm.countyCode = ''
+      }
+    },
+    // 编辑表单地区选择变化
+    handleWellFormRegionChange(value) {
+      if (value && value.length > 0) {
+        this.wellForm.provinceCode = value[0] || ''
+        this.wellForm.cityCode = value[1] || ''
+        this.wellForm.countyCode = value[2] || ''
+      } else {
+        this.wellForm.provinceCode = ''
+        this.wellForm.cityCode = ''
+        this.wellForm.countyCode = ''
+      }
     },
     // 导出
     handleExport() {
@@ -416,9 +436,11 @@ export default {
       this.wellForm = {
         wellCode: '',
         projectId: '',
+        regionCodes: [],
         provinceCode: '',
         cityCode: '',
         countyCode: '',
+        detailAddress: '',
         longitude: '',
         latitude: '',
         wellDepth: '',
@@ -454,6 +476,16 @@ export default {
         const res = await getMonitorWellInfo(row.wellCode)
         if (res.code === 200) {
           this.wellForm = { ...res.data }
+          // 根据省市县代码设置regionCodes
+          if (this.wellForm.provinceCode || this.wellForm.cityCode || this.wellForm.countyCode) {
+            this.wellForm.regionCodes = [
+              this.wellForm.provinceCode,
+              this.wellForm.cityCode,
+              this.wellForm.countyCode
+            ].filter(code => code) // 过滤掉空值
+          } else {
+            this.wellForm.regionCodes = []
+          }
         }
       } catch (error) {
         console.error('获取监测井详情失败:', error)
