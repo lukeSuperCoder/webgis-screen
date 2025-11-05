@@ -124,6 +124,42 @@
           <div class="well-structure">
             <img src="@/assets/well.png" alt="监测井结构图" class="well-image" />
           </div>
+          
+          <!-- 最新水质数据 -->
+          <div v-if="wellInfoPanel.data?.sampleData" class="sample-data-section">
+            <h4 class="section-title">最新水质数据</h4>
+            <div class="sample-info">
+              <div class="info-item">
+                <span class="label">采样时间:</span>
+                <span class="value">{{ formatDateTime(wellInfoPanel.data.sampleData.samplingTime) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">综合水质:</span>
+                <span class="value quality-level" :class="getQualityLevelClass(wellInfoPanel.data.sampleData.qualityLevel)">
+                  {{ wellInfoPanel.data.sampleData.qualityLevel || '未知' }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- 指标列表 -->
+            <div class="metrics-list">
+              <div
+                v-for="metric in wellInfoPanel.data.sampleData.metrics"
+                :key="metric.metricCode"
+                class="metric-row"
+              >
+                <span class="metric-name">{{ metric.metricName }}:</span>
+                <span class="metric-value">{{ metric.value }} {{ metric.unit }}</span>
+                <span class="metric-level" :class="getQualityLevelClass(metric.qualityLevel)">
+                  {{ metric.qualityLevel || '未知' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="sample-data-section">
+            <p class="no-data">暂无水质数据</p>
+          </div>
         </div>
       </div>
 
@@ -156,9 +192,9 @@
                 <div class="cell"><span class="label">电导率:</span><span class="value">{{ popupData.metrics.conductivity }}</span></div>
                 <div class="cell"><span class="label">叶绿素a:</span><span class="value">{{ popupData.metrics.chlorophyllA }}</span></div>
                 <div class="cell"><span class="label">蓝绿藻:</span><span class="value">{{ popupData.metrics.cyanobacteria }}</span></div>
-                <div class="cell"><span class="label">高锰酸盐指数:</span><span class="value">{{ popupData.metrics.permanganateIndex.value }}<span v-if="popupData.metrics.permanganateIndex.class">（{{ popupData.metrics.permanganateIndex.class }}）</span></span></div>
-                <div class="cell"><span class="label">总磷值:</span><span class="value">{{ popupData.metrics.totalPhosphorus.value }}<span v-if="popupData.metrics.totalPhosphorus.class">（{{ popupData.metrics.totalPhosphorus.class }}）</span></span></div>
-                <div class="cell"><span class="label">氨氮:</span><span class="value">{{ popupData.metrics.ammoniaNitrogen.value }}<span v-if="popupData.metrics.ammoniaNitrogen.class">（{{ popupData.metrics.ammoniaNitrogen.class }}）</span></span></div>
+                <div class="cell"><span class="label">高锰酸盐指数:</span><span class="value">{{ getMetricValue(popupData.metrics.permanganateIndex) }}<span v-if="getMetricClass(popupData.metrics.permanganateIndex)">（{{ getMetricClass(popupData.metrics.permanganateIndex) }}）</span></span></div>
+                <div class="cell"><span class="label">总磷值:</span><span class="value">{{ getMetricValue(popupData.metrics.totalPhosphorus) }}<span v-if="getMetricClass(popupData.metrics.totalPhosphorus)">（{{ getMetricClass(popupData.metrics.totalPhosphorus) }}）</span></span></div>
+                <div class="cell"><span class="label">氨氮:</span><span class="value">{{ getMetricValue(popupData.metrics.ammoniaNitrogen) }}<span v-if="getMetricClass(popupData.metrics.ammoniaNitrogen)">（{{ getMetricClass(popupData.metrics.ammoniaNitrogen) }}）</span></span></div>
                 <div class="cell"><span class="label">总氮:</span><span class="value">{{ popupData.metrics.totalNitrogen }}</span></div>
                 <div class="cell"><span class="label">总铁:</span><span class="value">{{ popupData.metrics.totalIron }}</span></div>
               </div>
@@ -321,7 +357,8 @@
   <script>
 import { OlMap } from '@/olmap/index'
 import BasemapSwitcher from './BasemapSwitcher.vue'
-import { getMonitorWellInfo } from '@/api'
+import { getMonitorWellInfo } from '@/api/monitorWell'
+import { getSampleData } from '@/api/monitorData'
 import * as echarts from 'echarts'
 
   export default {
@@ -415,10 +452,11 @@ import * as echarts from 'echarts'
         });
         // 点标记点击事件
         this.mapInstance.markerLayer.setOnClick(async (featureData, event) => {
+          console.log('Marker clicked, featureData:', featureData);
           const zoom = this.mapInstance.view.getZoom();
-          if(featureData.type === 'marker' && featureData.properties && featureData.geometry[0]) {
+          if(featureData && featureData.type === 'marker' && featureData.properties) {
             const data = featureData.properties;
-            console.log('current click data', data);
+            console.log('current click data:', data);
             
             // 单项水质分布：在右侧面板显示
             if (data.popupType === 'singleItem') {
@@ -439,13 +477,16 @@ import * as echarts from 'echarts'
               return; // 不再展示中心弹窗
             }
 
-            // 综合水质分布：按设计图展示
-            if (data.popupType === 'comprehensive' && data.metrics) {
+            // 综合水质分布：按设计图展示中心弹窗
+            if (data.popupType === 'comprehensive') {
+              console.log('Comprehensive popup, metrics:', data.metrics);
+              
+              // 只显示中心弹窗，不显示右侧监测井信息面板
               this.popupData = {
                 name: `${data.projectName || '项目名称'}  ${data.wellCode || ''}`,
-                measureTime: data.measureTime,
-                overallClass: data.overallClass,
-                metrics: data.metrics
+                measureTime: data.measureTime || '未知',
+                overallClass: data.overallClass || '未知',
+                metrics: data.metrics || {}
               };
               this.showPopup = true;
               const mapElement = document.getElementById('olmap');
@@ -453,20 +494,41 @@ import * as echarts from 'echarts'
               const x = event.pixel[0] - rect.left;
               const y = event.pixel[1] - rect.top - 10;
               this.popupStyle = { top: `${y}px`, left: `${x}px` };
+              
+              // 确保不显示右侧监测井信息面板
+              this.wellInfoPanel.visible = false;
+              
               return;
             }
 
             // 检查是否为监测井数据
-            if (data.well_code) {
+            if (data.well_code || data.wellCode) {
               try {
-                // 调用监测井详细信息接口
-                const response = await getMonitorWellInfo(data.well_code);
-                const wellData = response.data || response;
+                const wellCode = data.well_code || data.wellCode;
                 
-                // 显示监测井信息面板
+                // 1. 调用监测井详细信息接口
+                const wellInfoResponse = await getMonitorWellInfo(wellCode);
+                const wellData = wellInfoResponse.data || wellInfoResponse;
+                
+                // 2. 查询最新水质数据
+                let sampleData = null;
+                try {
+                  const sampleDataResponse = await getSampleData({
+                    monitoringWellCode: wellCode,
+                    date: null  // 获取最新数据
+                  });
+                  if (sampleDataResponse.code === 200 && sampleDataResponse.data) {
+                    sampleData = sampleDataResponse.data;
+                  }
+                } catch (err) {
+                  console.warn('获取水质数据失败:', err);
+                  // 水质数据获取失败不影响基本信息显示
+                }
+                
+                // 3. 显示监测井信息面板
                 this.wellInfoPanel.visible = true;
                 this.wellInfoPanel.data = {
-                  wellCode: wellData.wellCode || data.well_code || '130123J0202',
+                  wellCode: wellData.wellCode || wellCode || '130123J0202',
                   wellType: data.wellType || '省级',
                   completionTime: wellData.completionTime || '2023-05-20 19:25',
                   burialCondition: wellData.burialCondition || '基岩',
@@ -491,7 +553,9 @@ import * as echarts from 'echarts'
                   pollutionSourceInfo: wellData.pollutionSourceInfo || '无',
                   isSuitableForLongTermMonitoring: wellData.isSuitableForLongTermMonitoring ? '是' : '否',
                   isMaintenanceManagementCarriedOut: wellData.isMaintenanceManagementCarriedOut ? '是' : '否',
-                  actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知'
+                  actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知',
+                  // 添加水质数据
+                  sampleData: sampleData
                 };
                 return; // 不显示中心弹框
               } catch (error) {
@@ -499,13 +563,14 @@ import * as echarts from 'echarts'
                 // 如果接口调用失败，使用基础信息显示面板
                 this.wellInfoPanel.visible = true;
                 this.wellInfoPanel.data = {
-                  wellCode: data.well_code || '130123J0202',
+                  wellCode: data.well_code || data.wellCode || '130123J0202',
                   wellType: data.wellType || '省级',
                   completionTime: '2023-05-20 19:25',
                   burialCondition: '基岩',
                   monitoringLocation: '下游',
                   remarks: '/',
-                  error: '获取详细信息失败'
+                  error: '获取详细信息失败',
+                  sampleData: null
                 };
                 return; // 不显示中心弹框
               }
@@ -567,6 +632,54 @@ import * as echarts from 'echarts'
       closeWellInfoPanel() {
         this.wellInfoPanel.visible = false;
         this.wellInfoPanel.data = null;
+      },
+      /**
+       * 格式化日期时间
+       */
+      formatDateTime(dateTime) {
+        if (!dateTime) return '未知'
+        try {
+          const date = new Date(dateTime)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          return `${year}-${month}-${day} ${hours}:${minutes}`
+        } catch (error) {
+          return dateTime
+        }
+      },
+      /**
+       * 获取水质等级的CSS类名
+       */
+      getQualityLevelClass(qualityLevel) {
+        if (!qualityLevel || qualityLevel === '未知') return 'quality-unknown'
+        const levelMap = {
+          'I类': 'quality-i',
+          'II类': 'quality-ii',
+          'III类': 'quality-iii',
+          'IV类': 'quality-iv',
+          'V类': 'quality-v',
+          '劣V类': 'quality-v-'
+        }
+        return levelMap[qualityLevel] || 'quality-unknown'
+      },
+      /**
+       * 获取指标值（支持字符串和对象格式）
+       */
+      getMetricValue(metric) {
+        if (!metric) return '暂无数据'
+        if (typeof metric === 'string') return metric
+        if (typeof metric === 'object' && metric.value !== undefined) return metric.value
+        return '暂无数据'
+      },
+      /**
+       * 获取指标等级（支持对象格式）
+       */
+      getMetricClass(metric) {
+        if (!metric || typeof metric !== 'object') return ''
+        return metric.class || ''
       },
       renderSideChart() {
         const el = this.$refs.sideChart;
@@ -743,15 +856,7 @@ import * as echarts from 'echarts'
       this.startDate = new Date();
       this.endDate = new Date();
       this.endDate.setDate(this.endDate.getDate() + 47);
-      // 图例项
-      this.legendItems = [
-        { label: 'I类', color: '#22a6f2' },
-        { label: 'II类', color: '#28d6f7' },
-        { label: 'III类', color: '#b7e532' },
-        { label: 'IV类', color: '#f3d231' },
-        { label: 'V类', color: '#ff8c31' },
-        { label: '劣V类', color: '#ff2a1a' }
-      ];
+      // 注意：legendItems 应该由父组件通过 props 传入，不要在这里直接修改 prop
     },
     mounted() {
       this.initMap();
@@ -1247,6 +1352,152 @@ import * as echarts from 'echarts'
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+  }
+
+  /* 水质数据样式 */
+  .sample-data-section {
+    background: rgba(59, 130, 246, 0.03);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .section-title {
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+  }
+
+  .sample-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .sample-info .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  .sample-info .info-item .label {
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .sample-info .info-item .value {
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .quality-level {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .quality-i {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .quality-ii {
+    background: #e0f7fa;
+    color: #0e7490;
+  }
+
+  .quality-iii {
+    background: #f0fdf4;
+    color: #15803d;
+  }
+
+  .quality-iv {
+    background: #fefce8;
+    color: #a16207;
+  }
+
+  .quality-v {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  .quality-v- {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .quality-unknown {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .metrics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .metric-row:hover {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateX(2px);
+  }
+
+  .metric-name {
+    color: #475569;
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+  }
+
+  .metric-value {
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 14px;
+    margin: 0 12px;
+    flex: 1;
+    text-align: right;
+  }
+
+  .metric-level {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .no-data {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 20px;
+    margin: 0;
   }
 
   .well-body::-webkit-scrollbar {

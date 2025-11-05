@@ -87,21 +87,55 @@ class MarkerLayer {
    * @private
    */
   _handleClick(event) {
-    const feature = this.map.forEachFeatureAtPixel(event.pixel, (feature) => {
-      return feature;
-    });
+    // 使用 hitTolerance 增加点击检测范围，并指定图层过滤
+    const feature = this.map.forEachFeatureAtPixel(
+      event.pixel,
+      (feature) => {
+        // 只检测当前图层的 feature
+        const featureLayer = feature.get('layer');
+        if (featureLayer === this.vectorLayer || !featureLayer) {
+          return feature;
+        }
+        return null;
+      },
+      {
+        hitTolerance: 5,
+        layerFilter: (layer) => {
+          // 只检测当前图层的 feature
+          return layer === this.vectorLayer;
+        }
+      }
+    );
 
     if (feature) {
+      const allProperties = feature.getProperties();
+      // 过滤掉 geometry 和 layer 属性，只保留自定义属性
+      const properties = {};
+      Object.keys(allProperties).forEach(key => {
+        if (key !== 'geometry' && key !== 'layer') {
+          properties[key] = allProperties[key];
+        }
+      });
+
       const featureData = {
         type: 'marker',
-        properties: feature.getProperties(),
+        properties: properties,
         geometry: toLonLat(feature.getGeometry().getCoordinates())
       };
+      
+      console.log('MarkerLayer _handleClick - featureData:', featureData);
+      console.log('MarkerLayer _handleClick - allProperties:', allProperties);
       
       // 调用回调函数
       if (typeof this.options.onClick === 'function') {
         this.options.onClick(featureData, event);
+      } else {
+        console.warn('MarkerLayer onClick callback is not set');
       }
+    } else {
+      console.log('MarkerLayer _handleClick - no feature found at pixel:', event.pixel);
+      console.log('MarkerLayer _handleClick - vectorLayer:', this.vectorLayer);
+      console.log('MarkerLayer _handleClick - vectorSource features count:', this.vectorSource.getFeatures().length);
     }
   }
 
@@ -143,8 +177,30 @@ class MarkerLayer {
    * @param {Array} points 点位数组
    */
   addMarkers(points) {
-    const features = points.map(point => this._createFeature(point));
+    if (!points || points.length === 0) {
+      console.warn('MarkerLayer.addMarkers - points is empty');
+      return [];
+    }
+    
+    console.log('MarkerLayer.addMarkers - points count:', points.length);
+    console.log('MarkerLayer.addMarkers - sample point:', points[0]);
+    
+    const features = points.map(point => {
+      try {
+        return this._createFeature(point);
+      } catch (error) {
+        console.error('MarkerLayer.addMarkers - error creating feature:', error, point);
+        return null;
+      }
+    }).filter(f => f !== null);
+    
+    console.log('MarkerLayer.addMarkers - created features count:', features.length);
+    console.log('MarkerLayer.addMarkers - before addFeatures, source features count:', this.vectorSource.getFeatures().length);
+    
     this.vectorSource.addFeatures(features);
+    
+    console.log('MarkerLayer.addMarkers - after addFeatures, source features count:', this.vectorSource.getFeatures().length);
+    
     return features;
   }
 

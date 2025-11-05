@@ -55,13 +55,13 @@ export function addMonitorWell(data) {
 
 /**
  * 更新监测井
- * @param {Object} data - 监测井数据
+ * @param {Object} data - 监测井数据（通过query参数传递）
  */
 export function updateMonitorWell(data) {
   return request({
     url: '/monitor/well',
     method: 'put',
-    data
+    params: data  // 修复：使用params传递，后端期望query参数
   })
 }
 
@@ -89,5 +89,16 @@ export function importMonitorWell(formData) {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
+  })
+}
+
+/**
+ * 获取所有监测井编号
+ * @returns {Promise} 返回监测井编号列表
+ */
+export function getMonitorWellCodes() {
+  return request({
+    url: '/monitor/well/wellCodes',
+    method: 'get'
   })
 }

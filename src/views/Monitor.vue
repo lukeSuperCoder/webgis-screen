@@ -10,6 +10,13 @@
             :legend-title="legendTitle"
             :legend-unit="legendUnit"
         />
+        <!-- 加载遮罩 -->
+        <div v-if="isLoadingSampleData" class="loading-overlay">
+            <div class="loading-content">
+                <i class="el-icon-loading"></i>
+                <p>正在加载水质数据...</p>
+            </div>
+        </div>
         <MonitoringDataPanel v-if="showMonitoringPanel" @close="closeMonitoringPanel" />
     </div>
 </template>
@@ -18,7 +25,8 @@
     import ScreenMap from '@/components/ScreenMap.vue'
     import WaterQualityMenu from '@/components/WaterQualityMenu.vue'
     import MonitoringDataPanel from '@/components/MonitoringDataPanel.vue'
-    import { getMonitorWellSpatial } from '@/api'
+    import { getMonitorWellSpatial, getMonitorWellInfo } from '@/api/monitorWell'
+    import { getSampleList, getSampleData } from '@/api/monitorData'
 
 
     export default {
@@ -31,7 +39,10 @@
             return {
                 mapInstance: null,
                 wellLayer: null,
-                wellData: null,
+                wellData: [],              // 监测井基础数据
+                sampleData: {},            // 水质数据 { wellCode: data }
+                isLoadingSampleData: false, // 加载状态
+                queryDate: null,           // 查询日期（null = 最新数据）
                 wellsVisible: false,
                 boundaryVisible: false,
                 showLegend: false,
@@ -99,25 +110,299 @@
                 this.legendTitle = '水质类别';
                 this.legendUnit = '';
             },
-            // 生成“综合水质分布”模拟数据
+            // 生成"综合水质分布"模拟数据（已废弃，改为实时API加载）
             generateComprehensiveMock() {
                 var markers = require('@/assets/data/well_data.json')
                 return markers;
+            },
+            /**
+             * 批量获取所有监测井的水质数据（使用列表接口）
+             * @param {string} date - 查询日期 (可选，用于筛选时间范围)
+             * @returns {Promise<Array>}
+             */
+            async batchGetSampleData(date = null) {
+                try {
+                    // 使用 getSampleList 接口批量获取所有监测井的数据
+                    const params = {
+                        pageNum: 1,
+                        pageSize: 10000  // 设置一个较大的值以获取所有数据
+                    }
+
+                    // 如果指定了日期，设置时间范围（查询该日期当天的数据）
+                    if (date) {
+                        const queryDate = new Date(date)
+                        const startDate = new Date(queryDate)
+                        startDate.setHours(0, 0, 0, 0)
+                        const endDate = new Date(queryDate)
+                        endDate.setHours(23, 59, 59, 999)
+                        
+                        params.startTime = startDate.toISOString()
+                        params.endTime = endDate.toISOString()
+                    }
+
+                    const response = await getSampleList(params)
+                    
+                    if (response.code === 200 && response.rows) {
+                        // 按监测井分组，取每个监测井的最新一条数据
+                        const dataByWell = {}
+                        response.rows.forEach(row => {
+                            const wellCode = row.monitoringWellCode
+                            if (!dataByWell[wellCode]) {
+                                dataByWell[wellCode] = row
+                            } else {
+                                // 如果有多条数据，取采样时间最新的
+                                const currentTime = new Date(row.samplingTime || 0)
+                                const existingTime = new Date(dataByWell[wellCode].samplingTime || 0)
+                                if (currentTime > existingTime) {
+                                    dataByWell[wellCode] = row
+                                }
+                            }
+                        })
+
+                        // 转换为数组格式，每个元素包含监测井编码和完整数据
+                        return Object.keys(dataByWell).map(wellCode => ({
+                            code: 200,
+                            data: {
+                                monitoringWellCode: wellCode,
+                                samplingTime: dataByWell[wellCode].samplingTime,
+                                qualityLevel: dataByWell[wellCode].qualityLevel,
+                                metrics: dataByWell[wellCode].metricValues || []
+                            }
+                        }))
+                    }
+                    return []
+                } catch (error) {
+                    console.error('批量获取水质数据失败:', error)
+                    return []
+                }
+            },
+            /**
+             * 加载综合水质分布数据
+             */
+            async loadComprehensiveWaterQuality() {
+                try {
+                    this.isLoadingSampleData = true
+
+                    // 1. 先获取监测井列表
+                    if (this.wellData.length === 0) {
+                        await this.loadWellData()
+                    }
+
+                    if (this.wellData.length === 0) {
+                        this.$message.warning('暂无监测井数据')
+                        return
+                    }
+
+                    // 2. 批量查询所有监测井的水质数据（使用列表接口）
+                    const results = await this.batchGetSampleData(this.queryDate)
+
+                    // 3. 将水质数据映射到 sampleData
+                    this.sampleData = {}
+                    results.forEach(result => {
+                        if (result.data) {
+                            this.sampleData[result.data.monitoringWellCode] = result.data
+                        }
+                    })
+
+                    // 4. 生成地图标记数据
+                    const mapData = this.generateComprehensiveMapData()
+
+                    // 5. 渲染到地图
+                    this.renderComprehensiveLayer(mapData)
+
+                    // 6. 显示图例
+                    this.showComprehensiveLegend()
+
+                    this.$message.success(`成功加载 ${results.length} 个监测井的水质数据`)
+
+                } catch (error) {
+                    console.error('加载综合水质数据失败:', error)
+                    this.$message.error('加载水质数据失败，请重试')
+                } finally {
+                    this.isLoadingSampleData = false
+                }
+            },
+            /**
+             * 生成综合水质地图数据
+             */
+            generateComprehensiveMapData() {
+                const mapData = []
+
+                this.wellData.forEach(well => {
+                    const sampleData = this.sampleData[well.wellCode]
+
+                    if (!sampleData) {
+                        // 没有水质数据的井，显示为灰色
+                        mapData.push({
+                            coordinates: well.coordinates,
+                            properties: {
+                                popupType: 'comprehensive',
+                                wellCode: well.wellCode,
+                                wellName: well.wellCode,
+                                measureTime: '暂无数据',
+                                overallClass: '未知',
+                                color: '#999999',
+                                metrics: {}
+                            },
+                            style: {
+                                shapeType: 0,
+                                radius: 7,
+                                fillColor: '#999999',
+                                strokeColor: '#ffffff',
+                                strokeWidth: 2
+                            }
+                        })
+                        return
+                    }
+
+                    // 构建指标对象
+                    const metrics = {}
+                    if (sampleData.metrics && Array.isArray(sampleData.metrics)) {
+                        sampleData.metrics.forEach(metric => {
+                            // 将指标数据映射为前端所需格式
+                            const key = this.getMetricKey(metric.metricCode)
+                            metrics[key] = {
+                                value: metric.value + (metric.unit || ''),
+                                class: metric.qualityLevel || ''
+                            }
+                        })
+                    }
+
+                    // 确定水质等级颜色
+                    const color = this.getClassColor(sampleData.qualityLevel || '未知')
+
+                    mapData.push({
+                        coordinates: well.coordinates,
+                        properties: {
+                            popupType: 'comprehensive',
+                            projectName: well.properties.projectId || '',
+                            wellCode: well.wellCode,
+                            measureTime: sampleData.samplingTime ? this.formatDateTime(sampleData.samplingTime) : '未知',
+                            overallClass: sampleData.qualityLevel || '未知',
+                            color: color,
+                            metrics: metrics
+                        },
+                        style: {
+                            shapeType: 0,
+                            radius: 7,
+                            fillColor: color,
+                            strokeColor: '#ffffff',
+                            strokeWidth: 2
+                        }
+                    })
+                })
+
+                return mapData
+            },
+            /**
+             * 将后端指标编码映射为前端字段名
+             */
+            getMetricKey(metricCode) {
+                const mapping = {
+                    'WATER_TEMP': 'waterTemp',
+                    'TURBIDITY': 'turbidity',
+                    'PH': 'ph',
+                    'DO': 'dissolvedOxygen',
+                    'CONDUCTIVITY': 'conductivity',
+                    'CHLOROPHYLL_A': 'chlorophyllA',
+                    'CYANOBACTERIA': 'cyanobacteria',
+                    'COD_MN': 'permanganateIndex',
+                    'TP': 'totalPhosphorus',
+                    'NH3_N': 'ammoniaNitrogen',
+                    'TN': 'totalNitrogen',
+                    'TOTAL_IRON': 'totalIron'
+                }
+                return mapping[metricCode] || metricCode.toLowerCase()
+            },
+            /**
+             * 渲染综合水质图层
+             */
+            renderComprehensiveLayer(mapData) {
+                console.log('renderComprehensiveLayer - mapData length:', mapData ? mapData.length : 0)
+                console.log('renderComprehensiveLayer - mapData sample:', mapData ? mapData[0] : null)
+                
+                // 清除现有标记
+                if (this.mapInstance && this.mapInstance.markerLayer) {
+                    this.mapInstance.markerLayer.clearMarkers()
+                }
+
+                // 添加新标记
+                const layer = this.mapInstance.markerLayer
+                console.log('renderComprehensiveLayer - before addMarkers, source features count:', layer.vectorSource ? layer.vectorSource.getFeatures().length : 'N/A')
+                
+                const features = layer.addMarkers(mapData)
+                
+                console.log('renderComprehensiveLayer - after addMarkers, features count:', features ? features.length : 0)
+                console.log('renderComprehensiveLayer - after addMarkers, source features count:', layer.vectorSource ? layer.vectorSource.getFeatures().length : 'N/A')
+
+                // 自适应视图
+                if (features && features.length > 0) {
+                    const extents = features
+                        .map(f => f.getGeometry().getExtent())
+                        .filter(e => Array.isArray(e))
+                    let bbox = extents[0]
+                    for (let i = 1; i < extents.length; i++) {
+                        bbox = [
+                            Math.min(bbox[0], extents[i][0]),
+                            Math.min(bbox[1], extents[i][1]),
+                            Math.max(bbox[2], extents[i][2]),
+                            Math.max(bbox[3], extents[i][3])
+                        ]
+                    }
+                    this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 })
+                }
+            },
+            /**
+             * 显示综合水质图例
+             */
+            showComprehensiveLegend() {
+                this.legendTitle = '水质类别'
+                this.legendUnit = ''
+                this.legendItems = [
+                    { label: 'I类', color: '#22a6f2', range: '' },
+                    { label: 'II类', color: '#28d6f7', range: '' },
+                    { label: 'III类', color: '#b7e532', range: '' },
+                    { label: 'IV类', color: '#f3d231', range: '' },
+                    { label: 'V类', color: '#ff8c31', range: '' },
+                    { label: '劣V类', color: '#ff2a1a', range: '' },
+                    { label: '未知', color: '#999999', range: '' }
+                ]
+                this.showLegend = true
+            },
+            /**
+             * 格式化日期时间
+             */
+            formatDateTime(dateTime) {
+                if (!dateTime) return '未知'
+                try {
+                    const date = new Date(dateTime)
+                    const year = date.getFullYear()
+                    const month = String(date.getMonth() + 1).padStart(2, '0')
+                    const day = String(date.getDate()).padStart(2, '0')
+                    const hours = String(date.getHours()).padStart(2, '0')
+                    const minutes = String(date.getMinutes()).padStart(2, '0')
+                    return `${year}-${month}-${day} ${hours}:${minutes}`
+                } catch (error) {
+                    return dateTime
+                }
             },
             // 加载监测井数据（通过空间查询接口）
             loadWellData() {
                 if (!this.mapInstance || !this.mapInstance.view) {
                     console.warn('地图实例未就绪');
-                    return;
+                    return Promise.reject(new Error('地图实例未就绪'));
                 }
-                getMonitorWellSpatial()
+                return getMonitorWellSpatial()
                     .then((res) => {
                         const rawData = Array.isArray(res && res.data) ? res.data : res;
                         this.wellData = this.processWellData(rawData);
                         console.log('监测井数据加载完成，共', this.wellData.length, '个监测井');
+                        return this.wellData;
                     })
                     .catch((error) => {
                         console.error('加载监测井数据失败:', error);
+                        this.$message.error('加载监测井数据失败');
+                        throw error;
                     });
             },
             // 处理监测井数据格式
@@ -141,11 +426,14 @@
                     const wellTypes = ['国家级监测井', '国家级考察井', '省市级监测井', '防治区补充井', '背景值调查井'];
                     const wellType = wellTypes[index % wellTypes.length];
                     const wellColor = this.getWellTypeColor(wellType);
+                    const wellCode = well.wellCode || well.well_code;
                     
                     return {
+                        wellCode: wellCode,  // 保存wellCode用于后续查询
                         coordinates,
                         properties: {
-                            well_code: well.wellCode || well.well_code,
+                            well_code: wellCode,
+                            wellCode: wellCode,  // 同时保存两个字段名以确保兼容
                             longitude: coordinates && coordinates[0],
                             latitude: coordinates && coordinates[1],
                             wellType: wellType
@@ -195,20 +483,183 @@
                 if (!['ph','phosphorus'].includes(parameter)) return;
                 this.clearAllLayersAndLegend();
                 if (!this.mapInstance) return;
-                const points = this.generateSingleParameterMock(parameter);
-                const layer = this.mapInstance.markerLayer;
                 
-                // 设置对应的图例
+                // 调用实时API加载单项水质分布
                 if (parameter === 'ph') {
-                    this.legendTitle = 'pH';
-                    this.legendUnit = '';
+                    this.loadSingleMetricData('pH')
+                } else if (parameter === 'phosphorus') {
+                    this.loadSingleMetricData('总磷')
+                }
+            },
+            /**
+             * 加载单项水质分布数据
+             * @param {string} metricName - 指标名称 (pH, 总磷等)
+             */
+            async loadSingleMetricData(metricName) {
+                try {
+                    this.isLoadingSampleData = true
+
+                    // 1. 先获取监测井列表
+                    if (this.wellData.length === 0) {
+                        await this.loadWellData()
+                    }
+
+                    // 2. 提取监测井编码
+                    const wellCodes = this.wellData.map(well => well.wellCode).filter(code => code)
+
+                    if (wellCodes.length === 0) {
+                        this.$message.warning('暂无监测井数据')
+                        return
+                    }
+
+                    // 3. 批量查询所有监测井的水质数据（使用列表接口）
+                    const results = await this.batchGetSampleData(this.queryDate)
+
+                    // 4. 提取指标数据
+                    const metricData = this.extractMetricData(results, metricName)
+
+                    // 5. 渲染到地图
+                    this.renderSingleMetricLayer(metricData, metricName)
+
+                    // 6. 显示图例
+                    this.showSingleMetricLegend(metricName)
+
+                    this.$message.success(`成功加载 ${metricData.length} 个监测井的${metricName}数据`)
+
+                } catch (error) {
+                    console.error(`加载${metricName}数据失败:`, error)
+                    this.$message.error(`加载${metricName}数据失败，请重试`)
+                } finally {
+                    this.isLoadingSampleData = false
+                }
+            },
+            /**
+             * 提取指标数据
+             */
+            extractMetricData(results, metricName) {
+                const metricCodeMap = {
+                    'pH': 'PH',
+                    '总磷': 'TP',
+                    '氨氮': 'NH3_N',
+                    '溶解氧': 'DO',
+                    '高锰酸盐指数': 'COD_MN'
+                }
+
+                const metricCode = metricCodeMap[metricName] || metricName
+                const mapData = []
+
+                results.forEach(result => {
+                    if (!result.data) return
+
+                    const sampleData = result.data
+                    const wellCode = sampleData.monitoringWellCode
+
+                    // 查找对应的监测井位置
+                    const well = this.wellData.find(w => w.wellCode === wellCode)
+                    if (!well) return
+
+                    // 查找指标值
+                    const metric = sampleData.metrics && sampleData.metrics.find(m => m.metricCode === metricCode)
+
+                    if (!metric) {
+                        // 没有该指标数据
+                        mapData.push({
+                            coordinates: well.coordinates,
+                            properties: {
+                                popupType: 'singleItem',
+                                parameter: metricName.toLowerCase(),
+                                wellCode: wellCode,
+                                metricName: metricName,
+                                value: null,
+                                unit: '',
+                                qualityLevel: '未知',
+                                color: '#999999'
+                            },
+                            style: {
+                                shapeType: 0,
+                                radius: 7,
+                                fillColor: '#999999',
+                                strokeColor: '#ffffff',
+                                strokeWidth: 2
+                            }
+                        })
+                        return
+                    }
+
+                    // 确定颜色（根据质量等级）
+                    const color = this.getClassColor(metric.qualityLevel || '未知')
+
+                    mapData.push({
+                        coordinates: well.coordinates,
+                        properties: {
+                            popupType: 'singleItem',
+                            parameter: metricName.toLowerCase(),
+                            wellCode: wellCode,
+                            metricName: metricName,
+                            value: metric.value,
+                            unit: metric.unit || '',
+                            qualityLevel: metric.qualityLevel || '未知',
+                            standardRange: metric.standardRange || '',
+                            samplingTime: sampleData.samplingTime,
+                            color: color
+                        },
+                        style: {
+                            shapeType: 0,
+                            radius: 7,
+                            fillColor: color,
+                            strokeColor: '#ffffff',
+                            strokeWidth: 2
+                        }
+                    })
+                })
+
+                return mapData
+            },
+            /**
+             * 渲染单项指标图层
+             */
+            renderSingleMetricLayer(mapData, metricName) {
+                // 清除现有标记
+                if (this.mapInstance && this.mapInstance.markerLayer) {
+                    this.mapInstance.markerLayer.clearMarkers()
+                }
+
+                // 添加新标记
+                const layer = this.mapInstance.markerLayer
+                const features = layer.addMarkers(mapData)
+
+                // 自适应视图
+                if (features && features.length > 0) {
+                    const extents = features
+                        .map(f => f.getGeometry().getExtent())
+                        .filter(e => Array.isArray(e))
+                    let bbox = extents[0]
+                    for (let i = 1; i < extents.length; i++) {
+                        bbox = [
+                            Math.min(bbox[0], extents[i][0]),
+                            Math.min(bbox[1], extents[i][1]),
+                            Math.max(bbox[2], extents[i][2]),
+                            Math.max(bbox[3], extents[i][3])
+                        ]
+                    }
+                    this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 })
+                }
+            },
+            /**
+             * 显示单项指标图例
+             */
+            showSingleMetricLegend(metricName) {
+                // 根据指标类型设置图例
+                if (metricName === 'pH') {
+                    this.legendTitle = 'pH'
+                    this.legendUnit = ''
                     this.legendItems = [
                         { label: 'I类', color: '#22a6f2', range: '(6 ≤ a ≤ 9)' },
                         { label: '劣V类', color: '#ff2a1a', range: '(a < 6 或 a > 9)' }
-                    ];
-                } else if (parameter === 'phosphorus') {
-                    this.legendTitle = '总磷';
-                    this.legendUnit = '单位: mg/L';
+                    ]
+                } else if (metricName === '总磷') {
+                    this.legendTitle = '总磷'
+                    this.legendUnit = '单位: mg/L'
                     this.legendItems = [
                         { label: 'I类', color: '#22a6f2', range: '≤ 0.02' },
                         { label: 'II类', color: '#28d6f7', range: '≤ 0.10' },
@@ -216,26 +667,20 @@
                         { label: 'IV类', color: '#f3d231', range: '≤ 0.30' },
                         { label: 'V类', color: '#ff8c31', range: '≤ 0.40' },
                         { label: '劣V类', color: '#ff2a1a', range: '> 0.40' }
-                    ];
+                    ]
+                } else {
+                    // 通用水质等级图例
+                    this.legendItems = [
+                        { label: 'I类', color: '#22a6f2', range: '' },
+                        { label: 'II类', color: '#28d6f7', range: '' },
+                        { label: 'III类', color: '#b7e532', range: '' },
+                        { label: 'IV类', color: '#f3d231', range: '' },
+                        { label: 'V类', color: '#ff8c31', range: '' },
+                        { label: '劣V类', color: '#ff2a1a', range: '' },
+                        { label: '未知', color: '#999999', range: '' }
+                    ]
                 }
-                this.showLegend = true;
-                
-                const features = layer.addMarkers(points);
-                if (features && features.length > 0) {
-                    const extents = features
-                        .map(f => f.getGeometry().getExtent())
-                        .filter(e => Array.isArray(e));
-                    let bbox = extents[0];
-                    for (let i = 1; i < extents.length; i++) {
-                        bbox = [
-                            Math.min(bbox[0], extents[i][0]),
-                            Math.min(bbox[1], extents[i][1]),
-                            Math.max(bbox[2], extents[i][2]),
-                            Math.max(bbox[3], extents[i][3])
-                        ];
-                    }
-                    this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
-                }
+                this.showLegend = true
             },
             handleMenuClicked(menuType) {
                 console.log('菜单点击:', menuType)
@@ -248,63 +693,9 @@
                 this.clearAllLayersAndLegend();
 
                 if (menuType === 'comprehensive') {
-                    // 展示一批综合水质分布的 marker（模拟数据）
+                    // 加载综合水质分布实时数据
                     if (!this.mapInstance) return;
-                    
-                    const mockData = this.generateComprehensiveMock();
-                    const points = [];
-                    
-                    for (let i = 0; i < mockData.length; i++) {
-                        const p = mockData[i];
-                        const cls = p.properties && p.properties.overallClass;
-                        const color = this.getClassColor(cls);
-                        
-                        points.push({
-                            coordinates: p.coordinates,
-                            properties: p.properties,
-                            style: {
-                                shapeType: 0,
-                                radius: 7,
-                                fillColor: color,
-                                strokeColor: '#ffffff',
-                                strokeWidth: 2
-                            }
-                        });
-                    }
-                    
-                    const layer = this.mapInstance.markerLayer;
-                    layer.clearMarkers();
-                    
-                    // 打开图例
-                    this.legendTitle = '水质类别';
-                    this.legendUnit = '';
-                    this.legendItems = [
-                        { label: 'I类', color: this.getClassColor('I类') },
-                        { label: 'II类', color: this.getClassColor('II类') },
-                        { label: 'III类', color: this.getClassColor('III类') },
-                        { label: 'IV类', color: this.getClassColor('IV类') },
-                        { label: 'V类', color: this.getClassColor('V类') },
-                        { label: '劣V类', color: this.getClassColor('劣V类') },
-                    ];
-                    this.showLegend = true;
-                    
-                    const features = layer.addMarkers(points);
-                    if (features && features.length > 0) {
-                        // 视图定位到这些点
-                        const extents = features
-                            .map(f => f.getGeometry().getExtent())
-                            .filter(e => Array.isArray(e));
-                        let bbox = extents[0];
-                        for (let i = 1; i < extents.length; i++) {
-                            bbox = [
-                                Math.min(bbox[0], extents[i][0]),
-                                Math.min(bbox[1], extents[i][1]),
-                                Math.max(bbox[2], extents[i][2]),
-                                Math.max(bbox[3], extents[i][3])
-                            ];
-                        }
-                        this.mapInstance.view.fitExtent(bbox, { duration: 500, padding: 100 });
-                    }
+                    this.loadComprehensiveWaterQuality();
                 } else if (menuType === 'dashboard') {
                     // 显示监测数据看板
                     this.showMonitoringPanel = true;
@@ -486,5 +877,41 @@
         position: relative;
         background-color: #FFF;
         overflow: hidden;
+    }
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .loading-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+    }
+    .loading-content .el-icon-loading {
+        font-size: 40px;
+        margin-bottom: 16px;
+        animation: rotating 2s linear infinite;
+    }
+    .loading-content p {
+        font-size: 16px;
+        margin: 0;
+    }
+    @keyframes rotating {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
 </style>

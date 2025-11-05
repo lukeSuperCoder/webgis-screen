@@ -112,3 +112,56 @@ export function deleteMetric(metricIds) {
     data: metricIds
   })
 }
+
+/**
+ * 新增监测样本数据
+ * @param {Object} data - 监测数据对象
+ * @param {string} data.monitoringWellCode - 监测井编号
+ * @param {string} data.samplingTime - 采样时间 (ISO格式)
+ * @param {string} data.qualityLevel - 质量等级
+ * @param {Array} data.metricValues - 指标数组
+ */
+export function addSampleData(data) {
+  return request({
+    url: '/monitor/sample',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 更新监测样本数据
+ * @param {Object} data - 监测数据对象
+ * @param {number} data.id - 数据ID
+ */
+export function updateSampleData(data) {
+  return request({
+    url: '/monitor/sample',
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 删除监测样本数据
+ * @param {string} ids - 数据ID（逗号分隔）
+ */
+export function deleteSampleData(ids) {
+  return request({
+    url: `/monitor/sample/${ids}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 导出监测样本数据
+ * @param {Object} params - 查询参数
+ */
+export function exportSampleData(params) {
+  return request({
+    url: '/monitor/sample/export',
+    method: 'post',
+    params,
+    responseType: 'blob'
+  })
+}
