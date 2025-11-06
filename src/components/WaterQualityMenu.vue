@@ -160,6 +160,15 @@ export default {
     clearAllHighlights() {
       this.activeMenuItem = null;
       this.selectedParameter = null;
+    },
+    
+    // 清除监测井分布勾选状态（不触发事件，避免清除其他按钮高亮）
+    clearWellsCheckbox() {
+      if (this.showWells) {
+        this.showWells = false;
+        // 不触发 wells-toggle 事件，避免在 handleWellsToggle 中调用 clearAllHighlights
+        // 直接通过父组件设置 wellsVisible = false 即可
+      }
     }
   },
   

@@ -48,30 +48,38 @@
           </button>
         </div>
         <div class="side-body">
-          <div class="filters">
+              <div class="filters">
             <div class="row">
               <span>时间:</span>
-              <input type="date"/>
+              <input type="date" v-model="sidePanel.startTime" @change="handleSidePanelTimeRangeChange"/>
               <span>至</span>
-              <input type="date"/>
+              <input type="date" v-model="sidePanel.endTime" @change="handleSidePanelTimeRangeChange"/>
             </div>
           </div>
-          <div class="table">
-            <div class="thead">
-              <span>井点编号</span>
-              <span>{{ sidePanel.metricLabel }}</span>
-              <span>时间</span>
-            </div>
-            <div class="tbody">
-              <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
-                <span>{{ row.code }}</span>
-                <span>{{ row.value }}</span>
-                <span>{{ row.time }}</span>
+          <div v-if="sidePanel.loading" class="loading-indicator">
+            <span>正在加载历史数据...</span>
+          </div>
+          <div v-else>
+            <div class="table">
+              <div class="thead">
+                <span>井点编号</span>
+                <span>{{ sidePanel.metricLabel }}</span>
+                <span>时间</span>
+              </div>
+              <div class="tbody">
+                <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
+                  <span>{{ row.code }}</span>
+                  <span>{{ row.value }}{{ row.unit && row.unit !== '/' ? row.unit : '' }}</span>
+                  <span>{{ row.time }}</span>
+                </div>
+                <div v-if="sidePanel.table.length === 0" class="no-data">
+                  暂无历史数据
+                </div>
               </div>
             </div>
-          </div>
-          <div class="chart">
-            <div ref="sideChart" style="width:100%;height:220px;"></div>
+            <div class="chart">
+              <div ref="sideChart" style="width:100%;height:220px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -124,42 +132,6 @@
           <div class="well-structure">
             <img src="@/assets/well.png" alt="监测井结构图" class="well-image" />
           </div>
-          
-          <!-- 最新水质数据 -->
-          <div v-if="wellInfoPanel.data?.sampleData" class="sample-data-section">
-            <h4 class="section-title">最新水质数据</h4>
-            <div class="sample-info">
-              <div class="info-item">
-                <span class="label">采样时间:</span>
-                <span class="value">{{ formatDateTime(wellInfoPanel.data.sampleData.samplingTime) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">综合水质:</span>
-                <span class="value quality-level" :class="getQualityLevelClass(wellInfoPanel.data.sampleData.qualityLevel)">
-                  {{ wellInfoPanel.data.sampleData.qualityLevel || '未知' }}
-                </span>
-              </div>
-            </div>
-            
-            <!-- 指标列表 -->
-            <div class="metrics-list">
-              <div
-                v-for="metric in wellInfoPanel.data.sampleData.metrics"
-                :key="metric.metricCode"
-                class="metric-row"
-              >
-                <span class="metric-name">{{ metric.metricName }}:</span>
-                <span class="metric-value">{{ metric.value }} {{ metric.unit }}</span>
-                <span class="metric-level" :class="getQualityLevelClass(metric.qualityLevel)">
-                  {{ metric.qualityLevel || '未知' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div v-else class="sample-data-section">
-            <p class="no-data">暂无水质数据</p>
-          </div>
         </div>
       </div>
 
@@ -167,7 +139,8 @@
       <div v-if="showPopup" class="popup-container" :style="popupStyle">
         <div class="popup-content">
           <div class="popup-header">
-            <h3>{{ popupData.name }}</h3>
+            <h3 v-if="popupData && popupData.metricValues && popupData.overallClass">综合水质详情</h3>
+            <h3 v-else>{{ popupData.name }}</h3>
             <button @click="closePopup" class="close-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -177,7 +150,7 @@
           </div>
           <div class="popup-body">
             <!-- 综合水质分布弹框 -->
-            <div v-if="popupData && popupData.metrics && popupData.overallClass" class="comprehensive-info">
+            <div v-if="popupData && popupData.metricValues && popupData.overallClass" class="comprehensive-info">
               <div class="info-row">
                 <span class="label">时间:</span>
                 <span class="value">{{ popupData.measureTime }}</span>
@@ -185,18 +158,14 @@
                 <span class="value">{{ popupData.overallClass }}</span>
               </div>
               <div class="grid">
-                <div class="cell"><span class="label">水温:</span><span class="value">{{ popupData.metrics.waterTemp }}</span></div>
-                <div class="cell"><span class="label">浊度:</span><span class="value">{{ popupData.metrics.turbidity }}</span></div>
-                <div class="cell"><span class="label">pH:</span><span class="value">{{ popupData.metrics.ph }}</span></div>
-                <div class="cell"><span class="label">溶解氧:</span><span class="value">{{ popupData.metrics.dissolvedOxygen }}</span></div>
-                <div class="cell"><span class="label">电导率:</span><span class="value">{{ popupData.metrics.conductivity }}</span></div>
-                <div class="cell"><span class="label">叶绿素a:</span><span class="value">{{ popupData.metrics.chlorophyllA }}</span></div>
-                <div class="cell"><span class="label">蓝绿藻:</span><span class="value">{{ popupData.metrics.cyanobacteria }}</span></div>
-                <div class="cell"><span class="label">高锰酸盐指数:</span><span class="value">{{ getMetricValue(popupData.metrics.permanganateIndex) }}<span v-if="getMetricClass(popupData.metrics.permanganateIndex)">（{{ getMetricClass(popupData.metrics.permanganateIndex) }}）</span></span></div>
-                <div class="cell"><span class="label">总磷值:</span><span class="value">{{ getMetricValue(popupData.metrics.totalPhosphorus) }}<span v-if="getMetricClass(popupData.metrics.totalPhosphorus)">（{{ getMetricClass(popupData.metrics.totalPhosphorus) }}）</span></span></div>
-                <div class="cell"><span class="label">氨氮:</span><span class="value">{{ getMetricValue(popupData.metrics.ammoniaNitrogen) }}<span v-if="getMetricClass(popupData.metrics.ammoniaNitrogen)">（{{ getMetricClass(popupData.metrics.ammoniaNitrogen) }}）</span></span></div>
-                <div class="cell"><span class="label">总氮:</span><span class="value">{{ popupData.metrics.totalNitrogen }}</span></div>
-                <div class="cell"><span class="label">总铁:</span><span class="value">{{ popupData.metrics.totalIron }}</span></div>
+                <div 
+                  v-for="metric in popupData.metricValues" 
+                  :key="metric.metricCode"
+                  class="cell"
+                >
+                  <span class="label">{{ metric.metricName }}:</span>
+                  <span class="value">{{ metric.value }}<span v-if="metric.unit && metric.unit !== '/'">{{ metric.unit }}</span></span>
+                </div>
               </div>
             </div>
             
@@ -358,7 +327,7 @@
 import { OlMap } from '@/olmap/index'
 import BasemapSwitcher from './BasemapSwitcher.vue'
 import { getMonitorWellInfo } from '@/api/monitorWell'
-import { getSampleData } from '@/api/monitorData'
+import { getSampleDataRange } from '@/api/monitorData'
 import * as echarts from 'echarts'
 
   export default {
@@ -391,7 +360,12 @@ import * as echarts from 'echarts'
           title: '',
           metricLabel: 'pH',
           table: [],
-          chartPoints: '20,150 80,120 140,70 200,40 260,90 320,130'
+          chartPoints: '20,150 80,120 140,70 200,40 260,90 320,130',
+          wellCode: '',  // 监测井编码
+          metricName: '',  // 指标名称
+          loading: false,  // 加载状态
+          startTime: '',  // 开始时间
+          endTime: ''  // 结束时间
         },
         sideChartInstance: null,
         // 监测井信息面板
@@ -461,39 +435,41 @@ import * as echarts from 'echarts'
             // 单项水质分布：在右侧面板显示
             if (data.popupType === 'singleItem') {
               this.sidePanel.visible = true;
-              const label = data.parameter === 'ph' ? 'pH' : (data.parameter === 'phosphorus' ? '总磷值' : '指标');
-              this.sidePanel.title = `${data.projectName || '项目名称'}${data.wellCode ? ' ' + data.wellCode : ''}监测数据展板`;
+              const label = data.metricName || (data.parameter === 'ph' ? 'pH' : (data.parameter === 'phosphorus' ? '总磷值' : '指标'));
+              this.sidePanel.title = `单项水质分布数据展板`;
               this.sidePanel.metricLabel = label;
-              this.sidePanel.table = [
-                { code: data.wellCode, value: '7.5', time: '2025-10-20 17:48' },
-                { code: data.wellCode, value: '9.2', time: '2025-10-21 17:48' },
-                { code: data.wellCode, value: '8.2', time: '2025-10-22 17:48' },
-                { code: data.wellCode, value: '7.5', time: '2025-10-23 17:48' },
-                { code: data.wellCode, value: '5.5', time: '2025-10-24 17:48' }
-              ];
-              this.$nextTick(() => {
-                this.renderSideChart();
-              });
+              this.sidePanel.wellCode = data.wellCode;
+              this.sidePanel.metricName = data.metricName || label;
+              
+              // 设置默认时间范围（2020年到2025年）
+              const startTime = new Date('2020-01-01');
+              const endTime = new Date('2025-12-31');
+              this.sidePanel.startTime = this.formatDateForInput(startTime);
+              this.sidePanel.endTime = this.formatDateForInput(endTime);
+              
+              // 加载历史数据
+              this.loadSidePanelHistoryData();
+              
               return; // 不再展示中心弹窗
             }
 
             // 综合水质分布：按设计图展示中心弹窗
             if (data.popupType === 'comprehensive') {
-              console.log('Comprehensive popup, metrics:', data.metrics);
+              console.log('Comprehensive popup, metricValues:', data.metricValues);
               
               // 只显示中心弹窗，不显示右侧监测井信息面板
               this.popupData = {
                 name: `${data.projectName || '项目名称'}  ${data.wellCode || ''}`,
                 measureTime: data.measureTime || '未知',
                 overallClass: data.overallClass || '未知',
-                metrics: data.metrics || {}
+                metricValues: data.metricValues || []  // 直接使用 metricValues 数组
               };
               this.showPopup = true;
-              const mapElement = document.getElementById('olmap');
-              const rect = mapElement.getBoundingClientRect();
-              const x = event.pixel[0] - rect.left;
-              const y = event.pixel[1] - rect.top - 10;
-              this.popupStyle = { top: `${y}px`, left: `${x}px` };
+              
+              // 计算弹框位置，确保不超出屏幕范围
+              this.$nextTick(() => {
+                this.popupStyle = this.calculatePopupPosition(event.pixel);
+              });
               
               // 确保不显示右侧监测井信息面板
               this.wellInfoPanel.visible = false;
@@ -510,22 +486,7 @@ import * as echarts from 'echarts'
                 const wellInfoResponse = await getMonitorWellInfo(wellCode);
                 const wellData = wellInfoResponse.data || wellInfoResponse;
                 
-                // 2. 查询最新水质数据
-                let sampleData = null;
-                try {
-                  const sampleDataResponse = await getSampleData({
-                    monitoringWellCode: wellCode,
-                    date: null  // 获取最新数据
-                  });
-                  if (sampleDataResponse.code === 200 && sampleDataResponse.data) {
-                    sampleData = sampleDataResponse.data;
-                  }
-                } catch (err) {
-                  console.warn('获取水质数据失败:', err);
-                  // 水质数据获取失败不影响基本信息显示
-                }
-                
-                // 3. 显示监测井信息面板
+                // 2. 显示监测井信息面板
                 this.wellInfoPanel.visible = true;
                 this.wellInfoPanel.data = {
                   wellCode: wellData.wellCode || wellCode || '130123J0202',
@@ -553,9 +514,7 @@ import * as echarts from 'echarts'
                   pollutionSourceInfo: wellData.pollutionSourceInfo || '无',
                   isSuitableForLongTermMonitoring: wellData.isSuitableForLongTermMonitoring ? '是' : '否',
                   isMaintenanceManagementCarriedOut: wellData.isMaintenanceManagementCarriedOut ? '是' : '否',
-                  actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知',
-                  // 添加水质数据
-                  sampleData: sampleData
+                  actualMaintenanceManagementUnit: wellData.actualMaintenanceManagementUnit || '未知'
                 };
                 return; // 不显示中心弹框
               } catch (error) {
@@ -569,8 +528,7 @@ import * as echarts from 'echarts'
                   burialCondition: '基岩',
                   monitoringLocation: '下游',
                   remarks: '/',
-                  error: '获取详细信息失败',
-                  sampleData: null
+                  error: '获取详细信息失败'
                 };
                 return; // 不显示中心弹框
               }
@@ -582,14 +540,10 @@ import * as echarts from 'echarts'
             
             // 计算弹出框位置
             const mapElement = document.getElementById('olmap');
-            const rect = mapElement.getBoundingClientRect();
-            const x = event.pixel[0] - rect.left;
-            const y = event.pixel[1] - rect.top - 5; // 向上偏移10px
-            
-            this.popupStyle = {
-              top: `${y}px`,
-              left: `${x}px`
-            };
+            // 计算弹框位置，确保不超出屏幕范围
+            this.$nextTick(() => {
+              this.popupStyle = this.calculatePopupPosition(event.pixel);
+            });
           } else {
             this.showPopup = false;
           }
@@ -611,14 +565,10 @@ import * as echarts from 'echarts'
             
             // 计算弹出框位置
             const mapElement = document.getElementById('olmap');
-            const rect = mapElement.getBoundingClientRect();
-            const x = event.pixel[0] - rect.left;
-            const y = event.pixel[1] - rect.top - 10;
-            
-            this.popupStyle = {
-              top: `${y}px`,
-              left: `${x}px`
-            };
+            // 计算弹框位置，确保不超出屏幕范围
+            this.$nextTick(() => {
+              this.popupStyle = this.calculatePopupPosition(event.pixel);
+            });
           }
         });
       },
@@ -634,7 +584,7 @@ import * as echarts from 'echarts'
         this.wellInfoPanel.data = null;
       },
       /**
-       * 格式化日期时间
+       * 格式化日期时间（年月日时分秒）
        */
       formatDateTime(dateTime) {
         if (!dateTime) return '未知'
@@ -645,7 +595,8 @@ import * as echarts from 'echarts'
           const day = String(date.getDate()).padStart(2, '0')
           const hours = String(date.getHours()).padStart(2, '0')
           const minutes = String(date.getMinutes()).padStart(2, '0')
-          return `${year}-${month}-${day} ${hours}:${minutes}`
+          const seconds = String(date.getSeconds()).padStart(2, '0')
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
         } catch (error) {
           return dateTime
         }
@@ -681,36 +632,246 @@ import * as echarts from 'echarts'
         if (!metric || typeof metric !== 'object') return ''
         return metric.class || ''
       },
-      renderSideChart() {
-        const el = this.$refs.sideChart;
-        if (!el) return;
-        const times = (this.sidePanel.table || []).map(r => r.time);
-        const values = (this.sidePanel.table || []).map(r => parseFloat(String(r.value)));
-        if (this.sideChartInstance) {
-          this.sideChartInstance.dispose();
+      /**
+       * 加载监测数据展板历史数据
+       */
+      async loadSidePanelHistoryData() {
+        if (!this.sidePanel.wellCode || !this.sidePanel.metricName) {
+          return;
         }
-        this.sideChartInstance = echarts.init(el);
-        const option = {
-          grid: { left: 40, right: 16, top: 20, bottom: 28 },
-          tooltip: { trigger: 'axis' },
-          xAxis: { type: 'category', data: times, axisLabel: { color: '#64748b' } },
-          yAxis: { type: 'value', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(0,0,0,0.08)' } } },
-          series: [{
-            name: this.sidePanel.metricLabel,
-            type: 'line',
-            data: values,
-            smooth: true,
-            symbolSize: 6,
-            lineStyle: { width: 3, color: '#3b82f6' },
-            itemStyle: { color: '#3b82f6' },
-            areaStyle: { color: 'rgba(59,130,246,0.08)' }
-          }]
-        };
-        this.sideChartInstance.setOption(option);
-        // 自适应
-        setTimeout(() => {
-          if (this.sideChartInstance) this.sideChartInstance.resize();
-        }, 0);
+
+        try {
+          this.sidePanel.loading = true;
+          
+          // 计算时间范围
+          const startTime = this.sidePanel.startTime ? new Date(this.sidePanel.startTime + 'T00:00:00') : new Date();
+          const endTime = this.sidePanel.endTime ? new Date(this.sidePanel.endTime + 'T23:59:59') : new Date();
+          
+          if (!this.sidePanel.startTime || !this.sidePanel.endTime) {
+            // 如果没有设置时间，使用默认的2020年到2025年
+            startTime.setFullYear(2020, 0, 1);  // 2020-01-01
+            startTime.setHours(0, 0, 0, 0);
+            endTime.setFullYear(2025, 11, 31);  // 2025-12-31
+            endTime.setHours(23, 59, 59, 999);
+          }
+          
+          // 调用API获取历史数据（传参格式：年月日时分秒）
+          const response = await getSampleDataRange({
+            monitoringWellCode: this.sidePanel.wellCode,
+            startTime: this.formatDateTimeForApi(startTime),
+            endTime: this.formatDateTimeForApi(endTime),
+            metricName: this.sidePanel.metricName
+          });
+          
+          if (response.code === 200 && response.data) {
+            const data = response.data;
+            const tableData = [];
+            const times = [];
+            const values = [];
+            
+            // 处理返回的数据（根据实际API返回格式调整）
+            let dataArray = [];
+            if (Array.isArray(data)) {
+              dataArray = data;
+            } else if (data.data && Array.isArray(data.data)) {
+              dataArray = data.data;
+            } else if (data.rows && Array.isArray(data.rows)) {
+              dataArray = data.rows;
+            }
+            
+            // 获取单位（从第一个数据项获取）
+            let unit = '';
+            
+            dataArray.forEach(item => {
+              if (item.samplingTime && item.value !== undefined) {
+                const time = this.formatDateTime(item.samplingTime);
+                const value = item.value;
+                unit = item.unit || unit || '';
+                
+                tableData.push({
+                  code: this.sidePanel.wellCode,
+                  value: value,
+                  unit: unit,
+                  time: time
+                });
+                
+                times.push(time);
+                values.push(parseFloat(value) || 0);
+              }
+            });
+            
+            // 按时间倒序排列
+            tableData.sort((a, b) => {
+              return new Date(b.time) - new Date(a.time);
+            });
+            
+            this.sidePanel.table = tableData;
+            
+            // 渲染图表（时间正序，用于图表显示）
+            const chartTimes = [...times].reverse();
+            const chartValues = [...values].reverse();
+            this.$nextTick(() => {
+              this.renderSideChart(chartTimes, chartValues, unit);
+            });
+          } else {
+            this.sidePanel.table = [];
+            this.$nextTick(() => {
+              this.renderSideChart([], [], '');
+            });
+          }
+        } catch (error) {
+          console.error('加载监测数据展板历史数据失败:', error);
+          this.sidePanel.table = [];
+          this.$nextTick(() => {
+            this.renderSideChart([], [], '');
+          });
+        } finally {
+          this.sidePanel.loading = false;
+        }
+      },
+      /**
+       * 监测数据展板时间范围改变处理
+       */
+      handleSidePanelTimeRangeChange() {
+        if (this.sidePanel.startTime && this.sidePanel.endTime) {
+          // 验证时间范围
+          const start = new Date(this.sidePanel.startTime);
+          const end = new Date(this.sidePanel.endTime);
+          if (start > end) {
+            this.$message.warning('开始时间不能大于结束时间');
+            return;
+          }
+          // 重新加载数据
+          this.loadSidePanelHistoryData();
+        }
+      },
+      /**
+       * 格式化日期为input[type="date"]格式
+       */
+      formatDateForInput(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      },
+      /**
+       * 格式化日期时间为年月日时分秒格式（用于API传参）
+       */
+      formatDateTimeForApi(date) {
+        if (!date) return '';
+        try {
+          const d = new Date(date);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          const hours = String(d.getHours()).padStart(2, '0');
+          const minutes = String(d.getMinutes()).padStart(2, '0');
+          const seconds = String(d.getSeconds()).padStart(2, '0');
+          return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        } catch (error) {
+          return '';
+        }
+      },
+      /**
+       * 渲染监测数据展板图表
+       */
+      renderSideChart(times = null, values = null, unit = '') {
+        // 确保DOM已渲染
+        this.$nextTick(() => {
+          const el = this.$refs.sideChart;
+          if (!el) {
+            console.warn('图表容器元素未找到');
+            return;
+          }
+          
+          // 如果没有传入数据，从table中获取
+          if (times === null || values === null) {
+            times = (this.sidePanel.table || []).map(r => r.time).reverse();
+            values = (this.sidePanel.table || []).map(r => parseFloat(String(r.value)) || 0).reverse();
+            unit = this.sidePanel.table.length > 0 ? (this.sidePanel.table[0].unit || '') : '';
+          }
+          
+          // 清理旧实例
+          if (this.sideChartInstance) {
+            this.sideChartInstance.dispose();
+            this.sideChartInstance = null;
+          }
+          
+          if (times.length === 0 || values.length === 0) {
+            // 如果没有数据，不渲染图表
+            console.log('没有数据，不渲染图表', { times, values });
+            return;
+          }
+          
+          console.log('开始渲染图表', { times, values, unit });
+          
+          // 初始化图表
+          this.sideChartInstance = echarts.init(el);
+          
+          // 如果只有一条数据，优化显示方式
+          const isSingleData = times.length === 1 && values.length === 1;
+          
+          const option = {
+            grid: { left: 40, right: 16, top: 20, bottom: 28 },
+            tooltip: { 
+              trigger: 'axis',
+              formatter: (params) => {
+                const param = params[0];
+                return `${param.name}<br/>${param.seriesName}: ${param.value}${unit && unit !== '/' ? ' ' + unit : ''}`;
+              }
+            },
+            xAxis: { 
+              type: 'category', 
+              data: times, 
+              axisLabel: { 
+                color: '#64748b',
+                rotate: isSingleData ? 0 : 45,  // 单条数据时不旋转
+                fontSize: 10
+              },
+              // 单条数据时，确保x轴显示完整
+              boundaryGap: isSingleData ? true : false
+            },
+            yAxis: { 
+              type: 'value', 
+              axisLabel: { color: '#64748b' },
+              name: unit && unit !== '/' ? unit : '',
+              nameLocation: 'end',
+              splitLine: { lineStyle: { color: 'rgba(0,0,0,0.08)' } },
+              // 单条数据时，优化y轴范围显示
+              scale: !isSingleData  // 多条数据时使用scale，单条数据时不使用
+            },
+            series: [{
+              name: this.sidePanel.metricLabel,
+              type: 'line',
+              data: values,
+              smooth: !isSingleData,  // 单条数据时不使用平滑曲线
+              symbolSize: isSingleData ? 10 : 6,  // 单条数据时增大标记点
+              lineStyle: { width: 3, color: '#3b82f6' },
+              itemStyle: { 
+                color: '#3b82f6',
+                borderWidth: isSingleData ? 2 : 0,  // 单条数据时添加边框
+                borderColor: '#fff'
+              },
+              // 单条数据时不显示面积填充
+              areaStyle: isSingleData ? null : { color: 'rgba(59,130,246,0.08)' },
+              // 单条数据时确保显示标记点
+              showSymbol: true,
+              symbol: 'circle'
+            }]
+          };
+          
+          this.sideChartInstance.setOption(option);
+          
+          // 自适应调整
+          setTimeout(() => {
+            if (this.sideChartInstance) {
+              this.sideChartInstance.resize();
+              console.log('图表渲染完成');
+            }
+          }, 100);
+        });
       },
       async getListById(id){
         // TODO: 实现API调用逻辑
@@ -777,6 +938,79 @@ import * as echarts from 'echarts'
       closePopup() {
         this.showPopup = false;
         this.popupData = null;
+      },
+      /**
+       * 计算弹框位置，确保不超出屏幕范围
+       * @param {Array} pixel - 点击位置的像素坐标 [x, y]
+       * @returns {Object} - 包含 top 和 left 的样式对象
+       */
+      calculatePopupPosition(pixel) {
+        const mapElement = document.getElementById('olmap');
+        if (!mapElement) {
+          return { top: '0px', left: '0px' };
+        }
+        
+        // 获取地图容器的可视区域（viewport）尺寸，而不是整个容器尺寸
+        const rect = mapElement.getBoundingClientRect();
+        const viewportWidth = rect.width;  // 可视区域宽度
+        const viewportHeight = rect.height; // 可视区域高度
+        
+        // 点击位置相对于地图容器可视区域的坐标
+        const clickX = pixel[0] - rect.left;
+        const clickY = pixel[1] - rect.top;
+        
+        // 获取弹框元素（需要等待 DOM 更新）
+        const popupElement = this.$el.querySelector('.popup-container');
+        
+        // 根据弹框类型设置默认尺寸
+        const isComprehensive = popupElement && popupElement.querySelector('.comprehensive-info');
+        const defaultWidth = isComprehensive ? 700 : 350;
+        const defaultHeight = isComprehensive ? 400 : 250;
+        
+        // 获取弹框的实际尺寸，如果还没渲染则使用默认值
+        let popupWidth = defaultWidth;
+        let popupHeight = defaultHeight;
+        
+        if (popupElement) {
+          const popupRect = popupElement.getBoundingClientRect();
+          if (popupRect.width > 0) popupWidth = popupRect.width;
+          if (popupRect.height > 0) popupHeight = popupRect.height;
+        }
+        
+        // 屏幕边界（基于可视区域，而不是整个容器）
+        const padding = 10; // 边距
+        const minX = padding;
+        const maxX = viewportWidth - popupWidth - padding;
+        const minY = padding;
+        const maxY = viewportHeight - popupHeight - padding;
+        
+        // 计算初始位置（弹框中心对齐点击位置，向上偏移）
+        let left = clickX - popupWidth / 2;
+        let top = clickY - popupHeight - 10; // 默认显示在点击位置上方
+        
+        // 如果上方空间不够，显示在下方
+        if (top < minY) {
+          top = clickY + 20; // 显示在点击位置下方
+        }
+        
+        // 限制在水平范围内（基于可视区域）
+        if (left < minX) {
+          left = minX;
+        } else if (left > maxX) {
+          left = maxX;
+        }
+        
+        // 限制在垂直范围内（基于可视区域）
+        if (top < minY) {
+          top = minY;
+        } else if (top > maxY) {
+          top = maxY;
+        }
+        
+        return {
+          top: `${Math.max(0, top+300)}px`,
+          left: `${Math.max(0, left)}px`
+        };
       },
       // 对外提供：定位到指定图层
       // layerName: 'marker' | 'geom'
@@ -974,20 +1208,26 @@ import * as echarts from 'echarts'
   .popup-container {
     position: absolute;
     z-index: 50;
-    transform: translateX(-50%) translateY(-100%);
+    transform: translateY(-100%);
     min-width: 320px;
     max-width: 420px;
     animation: popupSlideIn 0.3s ease-out;
+  }
+  
+  /* 综合水质详情弹框加宽 */
+  .popup-container:has(.comprehensive-info) {
+    min-width: 600px;
+    max-width: 900px;
   }
 
   @keyframes popupSlideIn {
     from {
       opacity: 0;
-      transform: translateX(-50%) translateY(-100%) scale(0.9);
+      transform: translateY(-100%) scale(0.9);
     }
     to {
       opacity: 1;
-      transform: translateX(-50%) translateY(-100%) scale(1);
+      transform: translateY(-100%) scale(1);
     }
   }
 
@@ -1088,6 +1328,21 @@ import * as echarts from 'echarts'
   }
   .side-header .title { font-weight: 700; color:#1f2937; }
   .side-body { padding: 12px 14px; overflow: auto; }
+  
+  /* 监测数据展板加载状态和无数据提示 */
+  .side-panel .loading-indicator {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-size: 13px;
+  }
+  
+  .side-panel .no-data {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 12px;
+  }
   .filters .row { display:flex; align-items:center; gap:8px; margin-bottom: 10px; }
   .table { border:1px solid rgba(0,0,0,0.06); border-radius:8px; overflow:hidden; }
   .thead, .tr { display:grid; grid-template-columns: 1fr 60px 1.2fr; }
@@ -1096,27 +1351,77 @@ import * as echarts from 'echarts'
   .chart { margin-top: 12px; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:8px; }
 
   /* 综合水质分布样式 */
+  .comprehensive-info {
+    width: 100%;
+  }
+  
   .comprehensive-info .info-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
   }
+  
+  .comprehensive-info .info-row .label {
+    font-weight: 500;
+    color: #64748b;
+    font-size: 13px;
+  }
+  
+  .comprehensive-info .info-row .value {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+  }
+  
   .comprehensive-info .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    background: rgba(59,130,246,0.03);
-    padding: 6px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background: rgba(59, 130, 246, 0.02);
+    padding: 12px;
     border-radius: 8px;
   }
+  
   .comprehensive-info .cell {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     background: #fff;
-    border: 1px solid rgba(59,130,246,0.12);
-    padding: 6px 10px;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    padding: 10px 12px;
     border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+  
+  .comprehensive-info .cell:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .comprehensive-info .cell .label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  
+  .comprehensive-info .cell .value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
   }
 
   .popup-body::-webkit-scrollbar {
