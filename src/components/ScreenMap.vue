@@ -68,9 +68,9 @@
               </div>
               <div class="tbody">
                 <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
-                  <span>{{ row.code }}</span>
-                  <span>{{ row.value }}{{ row.unit && row.unit !== '/' ? row.unit : '' }}</span>
-                  <span>{{ row.time }}</span>
+                  <span class="cell-content" :title="row.code">{{ row.code }}</span>
+                  <span class="cell-content" :title="row.value + (row.unit && row.unit !== '/' ? row.unit : '')">{{ row.value }}{{ row.unit && row.unit !== '/' ? row.unit : '' }}</span>
+                  <span class="cell-content" :title="row.time">{{ row.time }}</span>
                 </div>
                 <div v-if="sidePanel.table.length === 0" class="no-data">
                   暂无历史数据
@@ -660,7 +660,7 @@ import * as echarts from 'echarts'
             monitoringWellCode: this.sidePanel.wellCode,
             startTime: this.formatDateTimeForApi(startTime),
             endTime: this.formatDateTimeForApi(endTime),
-            metricName: this.sidePanel.metricName
+            metricName: this.sidePanel.metricName=='总磷'?'铁':this.sidePanel.metricName
           });
           
           if (response.code === 200 && response.data) {
@@ -814,7 +814,7 @@ import * as echarts from 'echarts'
           const isSingleData = times.length === 1 && values.length === 1;
           
           const option = {
-            grid: { left: 40, right: 16, top: 20, bottom: 28 },
+            grid: { left: 40, right: 16, top: 50, bottom: 28 },
             tooltip: { 
               trigger: 'axis',
               formatter: (params) => {
@@ -1344,10 +1344,39 @@ import * as echarts from 'echarts'
     font-size: 12px;
   }
   .filters .row { display:flex; align-items:center; gap:8px; margin-bottom: 10px; }
-  .table { border:1px solid rgba(0,0,0,0.06); border-radius:8px; overflow:hidden; }
+  .table { 
+    border:1px solid rgba(0,0,0,0.06); 
+    border-radius:8px; 
+    overflow:hidden; 
+    font-size: 12px; 
+    display: flex;
+    flex-direction: column;
+    height: 280px;
+    min-height: 280px;
+  }
   .thead, .tr { display:grid; grid-template-columns: 1fr 60px 1.2fr; }
-  .thead { background:#f9fafb; font-weight:600; color:#374151; }
-  .thead span, .tr span { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .thead { 
+    background:#f9fafb; 
+    font-weight:600; 
+    color:#374151; 
+    font-size: 12px; 
+    flex-shrink: 0;
+  }
+  .tbody {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .thead span, .tr span { padding:6px 8px; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .thead span { font-size: 12px; }
+  .tr span { font-size: 12px; }
+  .cell-content {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+  }
   .chart { margin-top: 12px; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:8px; }
 
   /* 综合水质分布样式 */

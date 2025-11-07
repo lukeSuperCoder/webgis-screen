@@ -820,14 +820,12 @@
                 this.wellsVisible = show;
                 // 只有在勾选监测井分布时才清除其他按钮的高亮状态
                 if (show) {
-                // 勾选切换前清空全部，并关闭图例
-                this.clearAllLayersAndLegend();
-                // 清除水质分布按钮的高亮状态
-                if (this.$refs.waterQualityMenu) {
-                    this.$refs.waterQualityMenu.clearAllHighlights();
+                    // 勾选切换前清空全部，并关闭图例
+                    this.clearAllLayersAndLegend();
+                    // 清除水质分布按钮的高亮状态
+                    if (this.$refs.waterQualityMenu) {
+                        this.$refs.waterQualityMenu.clearAllHighlights();
                     }
-                }
-                if (show) {
                     // 设置监测井图例
                     this.legendTitle = '监测井类别';
                     this.legendUnit = '';
@@ -840,6 +838,14 @@
                     ];
                     this.showLegend = true;
                     this.showWells();
+                } else {
+                    // 取消勾选时清除监测井图层
+                    this.hideWells();
+                    // 关闭图例
+                    this.showLegend = false;
+                    this.legendItems = [];
+                    this.legendTitle = '水质类别';
+                    this.legendUnit = '';
                 }
             },
             // 显示监测井
