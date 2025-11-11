@@ -6,8 +6,8 @@ import request from './request'
  * 获取监测样本列表（分页查询）
  * @param {Object} params - 查询参数
  * @param {string} [params.monitoringWellCode] - 监测井编号
- * @param {string} [params.startTime] - 开始时间 (ISO格式: yyyy-MM-ddTHH:mm:ss)
- * @param {string} [params.endTime] - 结束时间 (ISO格式: yyyy-MM-ddTHH:mm:ss)
+ * @param {string} [params.startTime] - 开始时间 (格式: yyyy-MM-dd HH:mm:ss)
+ * @param {string} [params.endTime] - 结束时间 (格式: yyyy-MM-dd HH:mm:ss)
  * @param {string} [params.projectId] - 项目编号
  * @param {number} [params.pageNum=1] - 页码，默认1
  * @param {number} [params.pageSize=10] - 每页大小，默认10
@@ -62,10 +62,10 @@ export function getSampleMetrics(params) {
  * 获取监测井的水质数据
  * @param {Object} params - 查询参数
  * @param {string} params.monitoringWellCode - 监测井编号（必填）
- * @param {string} [params.date] - 时间(默认当前时间)，ISO格式，会返回该监测井离date最近的一个采样时间的数据
+ * @param {string} [params.date] - 时间(默认当前时间)，格式: yyyy-MM-dd HH:mm:ss，会返回该监测井离date最近的一个采样时间的数据
  * @returns {Promise} 返回监测井的水质数据 { code, msg, data }
  * @example
- * getSampleData({ monitoringWellCode: 'WELL-1000', date: '2025-01-20T17:48:00' })
+ * getSampleData({ monitoringWellCode: 'WELL-1000', date: '2025-01-20 17:48:00' })
  */
 export function getSampleData(params) {
   return request({
@@ -79,15 +79,15 @@ export function getSampleData(params) {
  * 获取监测数据范围（查询指定时间范围内监测井的单项指标数据）
  * @param {Object} params - 查询参数
  * @param {string} params.monitoringWellCode - 监测井编号（必填）
- * @param {string} params.startTime - 开始时间，ISO格式（必填）
- * @param {string} params.endTime - 结束时间，ISO格式（必填）
+ * @param {string} params.startTime - 开始时间，格式: yyyy-MM-dd HH:mm:ss（必填）
+ * @param {string} params.endTime - 结束时间，格式: yyyy-MM-dd HH:mm:ss（必填）
  * @param {string} params.metricName - 指标名称（必填）
  * @returns {Promise} 返回时间序列数据 { code, msg, data }
  * @example
  * getSampleDataRange({
  *   monitoringWellCode: 'WELL-1000',
- *   startTime: '2025-01-01T00:00:00',
- *   endTime: '2025-01-31T23:59:59',
+ *   startTime: '2025-01-01 00:00:00',
+ *   endTime: '2025-01-31 23:59:59',
  *   metricName: 'pH值'
  * })
  */
@@ -101,119 +101,57 @@ export function getSampleDataRange(params) {
 
 /**
  * 新增监测样本数据
- * ⚠️ 注意：此接口在OpenAPI文档中未定义，需要后端实现
- * @param {Object} data - 监测数据对象
- * @param {string} data.monitoringWellCode - 监测井编号（必填）
- * @param {string} data.samplingTime - 采样时间，ISO格式：yyyy-MM-dd HH:mm:ss（必填）
- * @param {string} data.qualityLevel - 质量等级：I类、II类、III类、IV类、V类、劣V类（必填）
- * @param {Array<Object>} data.metricValues - 指标数组（必填，至少一个）
- * @param {string} data.metricValues[].metricCode - 指标编码（必填）
- * @param {string} data.metricValues[].metricName - 指标名称（必填）
- * @param {number} data.metricValues[].value - 数值（必填）
- * @param {string} [data.metricValues[].unit] - 单位（可选）
- * @param {string} data.metricValues[].samplingTime - 采样时间，与主表单一致（必填）
- * @returns {Promise} 返回新增结果 { code, msg, data }
- * @example
- * addSampleData({
- *   monitoringWellCode: 'WELL-1000',
- *   samplingTime: '2025-01-20 17:48:00',
- *   qualityLevel: 'III类',
- *   metricValues: [
- *     { metricCode: 'PH', metricName: 'pH值', value: 7.7, unit: '', samplingTime: '2025-01-20 17:48:00' }
- *   ]
- * })
+ * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
+ * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。
  */
-export function addSampleData(data) {
-  return request({
-    url: '/monitor/sample',
-    method: 'post',
-    data
-  })
-}
+// export function addSampleData(data) {
+//   return request({
+//     url: '/monitor/sample',
+//     method: 'post',
+//     data
+//   })
+// }
 
 /**
  * 更新监测样本数据
- * ⚠️ 注意：此接口在OpenAPI文档中未定义，需要后端实现
- * @param {Object} data - 监测数据对象
- * @param {number|string} data.id - 数据ID（必填）
- * @param {string} data.monitoringWellCode - 监测井编号（必填）
- * @param {string} data.samplingTime - 采样时间，ISO格式（必填）
- * @param {string} data.qualityLevel - 质量等级（必填）
- * @param {Array<Object>} data.metricValues - 指标数组（必填）
- * @param {number|string} [data.metricValues[].id] - 指标数据ID（更新时必填，新增时为空）
- * @param {string} data.metricValues[].metricCode - 指标编码（必填）
- * @param {string} data.metricValues[].metricName - 指标名称（必填）
- * @param {number} data.metricValues[].value - 数值（必填）
- * @param {string} [data.metricValues[].unit] - 单位（可选）
- * @param {string} data.metricValues[].samplingTime - 采样时间（必填）
- * @returns {Promise} 返回更新结果 { code, msg, data }
- * @example
- * updateSampleData({
- *   id: 123,
- *   monitoringWellCode: 'WELL-1000',
- *   samplingTime: '2025-01-20 17:48:00',
- *   qualityLevel: 'III类',
- *   metricValues: [...]
- * })
+ * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
+ * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。
  */
-export function updateSampleData(data) {
-  return request({
-    url: '/monitor/sample',
-    method: 'put',
-    data
-  })
-}
+// export function updateSampleData(data) {
+//   return request({
+//     url: '/monitor/sample',
+//     method: 'put',
+//     data
+//   })
+// }
 
 /**
  * 删除监测样本数据（支持单个和批量删除）
- * ⚠️ 注意：此接口在OpenAPI文档中未定义，需要后端实现
- * @param {string|number|Array<string|number>} ids - 数据ID，支持单个ID、逗号分隔的字符串或数组
- * @returns {Promise} 返回删除结果 { code, msg, data }
- * @example
- * // 单个删除
- * deleteSampleData(123)
- * // 批量删除（逗号分隔）
- * deleteSampleData('123,456,789')
- * // 批量删除（数组）
- * deleteSampleData([123, 456, 789])
+ * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
+ * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。
  */
-export function deleteSampleData(ids) {
-  // 处理数组格式的ids
-  const idsStr = Array.isArray(ids) ? ids.join(',') : String(ids)
-  return request({
-    url: `/monitor/sample/${idsStr}`,
-    method: 'delete'
-  })
-}
+// export function deleteSampleData(ids) {
+//   // 处理数组格式的ids
+//   const idsStr = Array.isArray(ids) ? ids.join(',') : String(ids)
+//   return request({
+//     url: `/monitor/sample/${idsStr}`,
+//     method: 'delete'
+//   })
+// }
 
 /**
  * 导出监测样本数据（导出为Excel文件）
- * ⚠️ 注意：此接口在OpenAPI文档中未定义，需要后端实现
- * @param {Object} params - 查询参数（筛选条件）
- * @param {string} [params.monitoringWellCode] - 监测井编号
- * @param {string} [params.startTime] - 开始时间，ISO格式
- * @param {string} [params.endTime] - 结束时间，ISO格式
- * @param {string} [params.projectId] - 项目ID
- * @param {string} [params.qualityLevel] - 质量等级
- * @param {string} [params.metricName] - 指标名称
- * @returns {Promise<Blob>} 返回Excel文件的Blob对象
- * @example
- * const blob = await exportSampleData({ startTime: '2025-01-01T00:00:00', endTime: '2025-01-31T23:59:59' })
- * // 处理文件下载
- * const url = window.URL.createObjectURL(blob)
- * const link = document.createElement('a')
- * link.href = url
- * link.download = `监测数据_${new Date().getTime()}.xlsx`
- * link.click()
+ * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
+ * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。
  */
-export function exportSampleData(params) {
-  return request({
-    url: '/monitor/sample/export',
-    method: 'post',
-    params,
-    responseType: 'blob'
-  })
-}
+// export function exportSampleData(params) {
+//   return request({
+//     url: '/monitor/sample/export',
+//     method: 'post',
+//     params,
+//     responseType: 'blob'
+//   })
+// }
 
 // ==================== 检测指标管理相关API ====================
 
@@ -260,13 +198,14 @@ export function updateMetric(data) {
 
 /**
  * 删除检测指标
- * @param {string|number|Array<string|number>} metricIds - 指标ID或ID数组
+ * @param {string|number|Array<string|number>} metricIds - 指标ID或ID数组（支持逗号分隔的字符串）
  * @returns {Promise} 返回删除结果 { code, msg, data }
  */
 export function deleteMetric(metricIds) {
+  // 处理数组格式的ids，转换为逗号分隔的字符串
+  const idsStr = Array.isArray(metricIds) ? metricIds.join(',') : String(metricIds)
   return request({
-    url: '/monitor/metric',
-    method: 'delete',
-    data: metricIds
+    url: `/monitor/metric/${idsStr}`,
+    method: 'delete'
   })
 }
