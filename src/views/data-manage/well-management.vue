@@ -23,30 +23,12 @@
               @change="handleRegionChange"
             />
           </el-form-item>
-          <el-form-item label="井权单位:">
-            <el-select v-model="searchForm.wellOwnershipUnit" placeholder="请选择井权单位" style="width: 150px;" clearable>
-              <el-option label="机民井" value="机民井"></el-option>
-              <el-option label="国家井" value="国家井"></el-option>
-              <el-option label="地方井" value="地方井"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="是否区域监测点:">
-            <el-select v-model="searchForm.isAreaMonitoringPoint" placeholder="区域监测点" style="width: 120px;" clearable>
-              <el-option label="是" value="true"></el-option>
-              <el-option label="否" value="false"></el-option>
-            </el-select>
-          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleQuery">查询</el-button>
             <el-button @click="handleReset">重置</el-button>
+            <el-button type="success" @click="handleImport">导入</el-button>
           </el-form-item>
         </el-form>
-      </div>
-      
-      <!-- 操作按钮区域 -->
-      <div class="action-buttons">
-        <el-button type="primary" @click="addWell">新增</el-button>
-        <el-button type="success" @click="handleImport">导入</el-button>
       </div>
     </div>
 
@@ -131,11 +113,6 @@
                 clearable
                 @change="handleWellFormRegionChange"
               />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="详细地址">
-              <el-input v-model="wellForm.detailAddress" placeholder="请输入详细地址"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -227,14 +204,13 @@
 </template>
 
 <script>
-import { 
-  getMonitorWellList, 
-  addMonitorWell, 
-  updateMonitorWell, 
+import {
+  getMonitorWellList,
+  updateMonitorWell,
   getMonitorWellInfo,
   importMonitorWell
 } from '@/api/monitorWell'
-import { regionData, CodeToText, TextToCode } from 'element-china-area-data'
+import { regionData } from 'element-china-area-data'
 
 export default {
   name: 'WellManagement',
@@ -272,7 +248,6 @@ export default {
         provinceCode: '',
         cityCode: '',
         countyCode: '',
-        detailAddress: '', // 详细地址
         longitude: '',
         latitude: '',
         wellDepth: '',
@@ -325,6 +300,20 @@ export default {
     this.loadWellsData()
   },
   methods: {
+    // 转换区划代码:将6位标准代码转换为element-china-area-data格式
+    // 例如: '110000' -> '11', '110100' -> '1101', '110101' -> '110101'
+    convertRegionCode(code) {
+      if (!code) return code
+      // 去掉末尾的0
+      return code.replace(/0+$/, '')
+    },
+    // 转换区划代码:将element-china-area-data格式转换为6位标准代码
+    // 例如: '11' -> '110000', '1101' -> '110100', '110101' -> '110101'
+    convertToStandardCode(code) {
+      if (!code) return code
+      // 补齐到6位
+      return code.padEnd(6, '0')
+    },
     // 加载监测井数据
     async loadWellsData() {
       this.loading = true
@@ -334,6 +323,14 @@ export default {
           pageSize: this.pageSize,
           ...this.searchForm
         }
+        // 移除 regionCodes 参数，只保留 provinceCode、cityCode、countyCode
+        delete params.regionCodes
+        delete params.provinceCode
+        delete params.cityCode
+        delete params.wellOwnershipUnit
+        delete params.isAreaMonitoringPoint
+        delete params.isWaterSourceMonitoringPoint
+        delete params.isPollutionSourceMonitoringPoint
         const res = await getMonitorWellList(params)
         if (res.code === 200) {
           this.wellsData = res.rows || []
@@ -370,9 +367,10 @@ export default {
     // 搜索表单地区选择变化
     handleRegionChange(value) {
       if (value && value.length > 0) {
-        this.searchForm.provinceCode = value[0] || ''
-        this.searchForm.cityCode = value[1] || ''
-        this.searchForm.countyCode = value[2] || ''
+        // 将element-china-area-data格式转换回6位标准代码
+        this.searchForm.provinceCode = this.convertToStandardCode(value[0]) || ''
+        this.searchForm.cityCode = this.convertToStandardCode(value[1]) || ''
+        this.searchForm.countyCode = this.convertToStandardCode(value[2]) || ''
       } else {
         this.searchForm.provinceCode = ''
         this.searchForm.cityCode = ''
@@ -382,14 +380,23 @@ export default {
     // 编辑表单地区选择变化
     handleWellFormRegionChange(value) {
       if (value && value.length > 0) {
-        this.wellForm.provinceCode = value[0] || ''
-        this.wellForm.cityCode = value[1] || ''
-        this.wellForm.countyCode = value[2] || ''
+        // 将element-china-area-data格式转换回6位标准代码
+        this.wellForm.provinceCode = this.convertToStandardCode(value[0]) || ''
+        this.wellForm.cityCode = this.convertToStandardCode(value[1]) || ''
+        this.wellForm.countyCode = this.convertToStandardCode(value[2]) || ''
       } else {
         this.wellForm.provinceCode = ''
         this.wellForm.cityCode = ''
         this.wellForm.countyCode = ''
       }
+      console.log('地区选择变化:', {
+        选择的值: value,
+        转换后: {
+          provinceCode: this.wellForm.provinceCode,
+          cityCode: this.wellForm.cityCode,
+          countyCode: this.wellForm.countyCode
+        }
+      })
     },
     // 导出
     handleExport() {
@@ -430,62 +437,38 @@ export default {
       this.currentPage = val
       this.loadWellsData()
     },
-    // 新增监测井
-    addWell() {
-      this.dialogTitle = '新增监测井'
-      this.wellForm = {
-        wellCode: '',
-        projectId: '',
-        regionCodes: [],
-        provinceCode: '',
-        cityCode: '',
-        countyCode: '',
-        detailAddress: '',
-        longitude: '',
-        latitude: '',
-        wellDepth: '',
-        wellOwnershipUnit: '',
-        burialCondition: '',
-        aquiferMedium: '',
-        wellPipeMaterial: '',
-        isAreaMonitoringPoint: false,
-        isWaterSourceMonitoringPoint: false,
-        isPollutionSourceMonitoringPoint: false,
-        areaMonitoringPointType: '',
-        waterSourceInfo: '',
-        pollutionSourceInfo: '',
-        wellheadElevation: '',
-        wellheadInnerDiameter: '',
-        isMultipleScreenPipe: false,
-        screenPipeDepth: '',
-        isSuitableForLongTermMonitoring: false,
-        isConvertedToLongTermMonitoring: false,
-        isMaintenanceManagementCarriedOut: false,
-        actualMaintenanceManagementUnit: '',
-        isSealedBackfilledForNonLongTerm: false,
-        sealedBackfilledStatus: '',
-        imageUrl: '',
-        description: ''
-      }
-      this.dialogVisible = true
-    },
     // 编辑监测井
     async editWell(row) {
       this.dialogTitle = '编辑监测井'
       try {
         const res = await getMonitorWellInfo(row.wellCode)
         if (res.code === 200) {
-          this.wellForm = { ...res.data }
-          // 根据省市县代码设置regionCodes
-          if (this.wellForm.provinceCode || this.wellForm.cityCode || this.wellForm.countyCode) {
-            this.wellForm.regionCodes = [
-              this.wellForm.provinceCode,
-              this.wellForm.cityCode,
-              this.wellForm.countyCode
-            ].filter(code => code) // 过滤掉空值
-          } else {
-            this.wellForm.regionCodes = []
+          // 先保存原始数据
+          const data = res.data
+
+          // 根据省市县代码构建regionCodes数组
+          // 需要将6位标准代码转换为element-china-area-data格式
+          const regionCodes = []
+          if (data.provinceCode) {
+            regionCodes.push(this.convertRegionCode(data.provinceCode))
+            if (data.cityCode) {
+              regionCodes.push(this.convertRegionCode(data.cityCode))
+              if (data.countyCode) {
+                regionCodes.push(this.convertRegionCode(data.countyCode))
+              }
+            }
           }
+
+          // 设置表单数据
+          this.wellForm = {
+            ...data,
+            regionCodes: regionCodes.length > 0 ? regionCodes : []
+          }
+
+          console.log('编辑数据回显(已转换):', {
+            原始: { provinceCode: data.provinceCode, cityCode: data.cityCode, countyCode: data.countyCode },
+            转换后: this.wellForm.regionCodes
+          })
         }
       } catch (error) {
         console.error('获取监测井详情失败:', error)
@@ -507,25 +490,44 @@ export default {
         this.$message.error('获取监测井详情失败')
       }
     },
-    // 保存监测井
+    // 保存监测井(仅编辑)
     saveWell() {
       this.$refs.wellForm.validate(async (valid) => {
         if (valid) {
           try {
-            let res
-            if (this.wellForm.id) {
-              res = await updateMonitorWell(this.wellForm)
-            } else {
-              res = await addMonitorWell(this.wellForm)
+            // 检查是否为编辑模式
+            if (!this.wellForm.id) {
+              this.$message.error('无法保存:缺少监测井ID')
+              return
             }
+
+            // 准备提交的数据
+            const submitData = {
+              ...this.wellForm,
+              // 确保布尔值字段被正确传递
+              isAreaMonitoringPoint: !!this.wellForm.isAreaMonitoringPoint,
+              isWaterSourceMonitoringPoint: !!this.wellForm.isWaterSourceMonitoringPoint,
+              isPollutionSourceMonitoringPoint: !!this.wellForm.isPollutionSourceMonitoringPoint,
+              isMultipleScreenPipe: !!this.wellForm.isMultipleScreenPipe,
+              isSuitableForLongTermMonitoring: !!this.wellForm.isSuitableForLongTermMonitoring,
+              isConvertedToLongTermMonitoring: !!this.wellForm.isConvertedToLongTermMonitoring,
+              isMaintenanceManagementCarriedOut: !!this.wellForm.isMaintenanceManagementCarriedOut,
+              isSealedBackfilledForNonLongTerm: !!this.wellForm.isSealedBackfilledForNonLongTerm
+            }
+
+            // 调用更新接口
+            const res = await updateMonitorWell(submitData)
+
             if (res.code === 200) {
-              this.$message.success('保存成功')
+              this.$message.success('更新成功')
               this.dialogVisible = false
               this.loadWellsData()
+            } else {
+              this.$message.error(res.msg || '更新失败')
             }
           } catch (error) {
             console.error('保存失败:', error)
-            this.$message.error('保存失败')
+            this.$message.error(error.response?.data?.msg || '保存失败')
           }
         }
       })

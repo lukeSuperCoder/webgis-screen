@@ -58,10 +58,14 @@ export function addMonitorWell(data) {
  * @param {Object} data - 监测井数据（通过query参数传递）
  */
 export function updateMonitorWell(data) {
+  // 构建请求参数,移除辅助字段
+  const params = { ...data }
+  delete params.regionCodes  // 删除前端辅助字段,只传递provinceCode、cityCode、countyCode
+
   return request({
     url: '/monitor/well',
     method: 'put',
-    params: data  // 修复：使用params传递，后端期望query参数
+    params  // 使用params传递query参数
   })
 }
 

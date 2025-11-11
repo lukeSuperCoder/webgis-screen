@@ -4,12 +4,21 @@
     <div class="search-section">
       <div class="search-form">
         <label>指标编码:</label>
-        <el-input 
+        <el-select 
           v-model="searchForm.metricCode" 
-          placeholder="请输入指标编码"
+          placeholder="请选择指标编码"
           style="width: 200px; margin-right: 10px;"
           clearable
-        />
+          filterable
+          popper-class="metric-select-dropdown"
+        >
+          <el-option
+            v-for="item in metricOptions"
+            :key="item.dictValue"
+            :label="item.dictLabel"
+            :value="item.dictValue"
+          />
+        </el-select>
         <label>质量等级:</label>
         <el-select 
           v-model="searchForm.qualityLevel" 
@@ -58,7 +67,6 @@
         </el-table-column>
         <el-table-column prop="lowerBound" label="下界值" width="100" align="center"></el-table-column>
         <el-table-column prop="upperBound" label="上界值" width="100" align="center"></el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="150" align="center"></el-table-column>
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="editRule(scope.row)">编辑</el-button>
@@ -84,11 +92,20 @@
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px">
       <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px">
         <el-form-item label="指标编码" prop="metricCode">
-          <el-input 
+          <el-select 
             v-model="ruleForm.metricCode" 
             placeholder="请选择指标编码"
             style="width: 100%"
-          ></el-input>
+            filterable
+            popper-class="metric-select-dropdown"
+          >
+            <el-option
+              v-for="item in metricOptions"
+              :key="item.dictValue"
+              :label="item.dictLabel"
+              :value="item.dictValue"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="质量等级" prop="qualityLevel">
           <el-select v-model="ruleForm.qualityLevel" placeholder="请选择质量等级" style="width: 100%">
@@ -135,6 +152,7 @@
 
 <script>
 import { getMetricList, addMetric, updateMetric, deleteMetric } from '@/api/qualityMetric'
+import { getSampleMetrics } from '@/api/monitorData'
 
 export default {
   name: 'QualityRules',
@@ -153,6 +171,7 @@ export default {
       selectedRows: [],
       dialogVisible: false,
       dialogTitle: '新增指标标准',
+      metricOptions: [], // 指标编码选项列表
       ruleForm: {
         id: null,
         metricCode: '',
@@ -182,8 +201,26 @@ export default {
   },
   mounted() {
     this.loadData()
+    this.loadMetricOptions()
   },
   methods: {
+    // 加载指标编码选项（从 /monitor/sample/metrics 接口获取）
+    async loadMetricOptions() {
+      try {
+        const response = await getSampleMetrics()
+        if (response.code === 200 || response.code === 0) {
+          const metrics = response.data || []
+          // 将接口返回的指标数据转换为下拉框需要的格式
+          this.metricOptions = metrics.map(item => ({
+            dictValue: item.metricCode || item.code,
+            dictLabel: item.metricName || item.name || item.metricCode || item.code
+          }))
+        }
+      } catch (error) {
+        console.error('加载指标编码列表失败:', error)
+        this.$message.warning('加载指标编码列表失败，请稍后重试')
+      }
+    },
     // 加载数据
     async loadData() {
       this.loading = true
@@ -250,6 +287,10 @@ export default {
         lowerBound: null
       }
       this.dialogVisible = true
+      // 确保指标选项已加载
+      if (this.metricOptions.length === 0) {
+        this.loadMetricOptions()
+      }
       this.$nextTick(() => {
         this.$refs.ruleForm && this.$refs.ruleForm.clearValidate()
       })
@@ -396,5 +437,19 @@ export default {
 
 .dialog-footer {
   text-align: right;
+}
+</style>
+
+<style>
+/* 限制指标编码下拉框的宽度，避免过长 */
+.metric-select-dropdown {
+  max-width: 300px !important;
+}
+
+.metric-select-dropdown .el-select-dropdown__item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
 }
 </style>
