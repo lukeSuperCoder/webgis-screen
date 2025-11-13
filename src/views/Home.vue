@@ -23,12 +23,7 @@
             <i class="el-icon-s-home"></i>
             <span>综合监测</span>
           </el-menu-item>
-          <el-menu-item
-            index="/analysis"
-            @click.native.prevent="
-              $alert('该功能正在开发中，敬请期待！', '提示', { confirmButtonText: '确定' })
-            "
-          >
+          <el-menu-item index="/analysis">
             <i class="el-icon-data-analysis"></i>
             <span>评价分析</span>
           </el-menu-item>

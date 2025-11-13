@@ -29,7 +29,7 @@ const routes = [
         name: 'Analysis',
         component: () => import('../views/analysis/index.vue'),
         meta: { requiresAuth: true },
-        redirect: '/analysis/standards',
+        redirect: '/analysis/comprehensive',
         children: [
           {
             path: 'standards',
