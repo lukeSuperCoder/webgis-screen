@@ -29,6 +29,11 @@ export default {
           icon: 'el-icon-location'
         },
         {
+          key: '/data/water-source-management',
+          title: '水源地数据管理',
+          icon: 'el-icon-coordinate'
+        },
+        {
           key: '/data/monitoring-data',
           title: '监测数据管理',
           icon: 'el-icon-data-line'
@@ -46,6 +51,7 @@ export default {
       const routeMap = {
         '/data/quality-rules': '数据质控规则',
         '/data/well-management': '监测井数据管理',
+        '/data/water-source-management': '水源地数据管理',
         '/data/monitoring-data': '监测数据管理',
         '/data/project-config': '监测项目数据管理'
       }
@@ -55,6 +61,7 @@ export default {
       const descMap = {
         '/data/quality-rules': '配置数据质量控制规则',
         '/data/well-management': '管理监测井基础信息',
+        '/data/water-source-management': '管理水源地基础信息及边界',
         '/data/monitoring-data': '录入、查询和管理监测数据',
         '/data/project-config': '配置监测项目参数'
       }

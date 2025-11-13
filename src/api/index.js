@@ -27,5 +27,8 @@ export * from './monitorLog'
 // 项目管理
 export * from './project'
 
+// 水源地信息管理
+export * from './waterSource'
+
 // 请求实例
 export { default as request } from './request'

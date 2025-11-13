@@ -89,6 +89,12 @@ const routes = [
             meta: { requiresAuth: true }
           },
           {
+            path: 'water-source-management',
+            name: 'DataWaterSourceManagement',
+            component: () => import('../views/data-manage/water-source-management.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
             path: 'monitoring-data',
             name: 'DataMonitoringData',
             component: () => import('../views/data-manage/monitoring-data.vue'),
