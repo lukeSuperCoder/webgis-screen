@@ -211,6 +211,7 @@ import {
   importMonitorWell
 } from '@/api/monitorWell'
 import { regionData } from 'element-china-area-data'
+import { downloadMonitorWellTemplate } from '@/utils/download'
 
 export default {
   name: 'WellManagement',
@@ -400,7 +401,8 @@ export default {
     },
     // 导出
     handleExport() {
-      this.$message.info('导出功能开发中')
+      downloadMonitorWellTemplate()
+      this.$message.success('模版下载成功')
     },
     // 导入
     handleImport() {

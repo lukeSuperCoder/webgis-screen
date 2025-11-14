@@ -30,6 +30,7 @@
         </el-form>
         <div class="action-buttons">
           <el-button type="success" @click="handleImportExcel">导入</el-button>
+          <el-button type="primary" @click="handleDownloadTemplate">下载模版</el-button>
           <el-button type="warning" @click="handleImportShp">上传水源边界</el-button>
         </div>
       </div>
@@ -196,6 +197,7 @@ import {
   importWaterSourceShp
 } from '@/api/waterSource'
 import { regionData } from 'element-china-area-data'
+import { downloadWaterSourceTemplate } from '@/utils/download'
 
 export default {
   name: 'WaterSourceManagement',
@@ -263,6 +265,11 @@ export default {
     convertToStandardCode(code) {
       if (!code) return code
       return code.padEnd(6, '0')
+    },
+    // 下载模版
+    handleDownloadTemplate() {
+      downloadWaterSourceTemplate()
+      this.$message.success('模版下载成功')
     },
     async loadList() {
       this.loading = true

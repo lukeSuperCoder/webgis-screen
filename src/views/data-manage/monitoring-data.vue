@@ -33,6 +33,7 @@
       <!-- 操作按钮区域 -->
       <div class="action-buttons">
         <el-button type="success" @click="handleImport" :loading="importLoading">导入</el-button>
+        <el-button type="primary" @click="handleDownloadTemplate">下载模版</el-button>
       </div>
     </div>
 
@@ -101,10 +102,11 @@
 </template>
 
 <script>
-import { 
+import {
   getSampleList,
   importSampleData
 } from '@/api/monitorData'
+import { downloadMonitorDataTemplate } from '@/utils/download'
 
 export default {
   name: 'MonitoringData',
@@ -127,6 +129,11 @@ export default {
     this.loadDataList()
   },
   methods: {
+    // 下载模版
+    handleDownloadTemplate() {
+      downloadMonitorDataTemplate()
+      this.$message.success('模版下载成功')
+    },
     // 为表格行生成稳定唯一的 key，避免 undefined 导致的重复 key 警告
     getRowKey(row) {
       // 优先使用后端返回的 id
