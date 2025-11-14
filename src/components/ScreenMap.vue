@@ -61,19 +61,36 @@
           </div>
           <div v-else>
             <div class="table">
-              <div class="thead">
-                <span>井点编号</span>
-                <span>{{ sidePanel.metricLabel }}</span>
-                <span>时间</span>
-              </div>
-              <div class="tbody">
-                <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
-                  <span class="cell-content" :title="row.code">{{ row.code }}</span>
-                  <span class="cell-content" :title="row.value + (row.unit && row.unit !== '/' ? row.unit : '')">{{ row.value }}{{ row.unit && row.unit !== '/' ? row.unit : '' }}</span>
-                  <span class="cell-content" :title="row.time">{{ row.time }}</span>
-                </div>
-                <div v-if="sidePanel.table.length === 0" class="no-data">
-                  暂无历史数据
+              <div class="table-scroll">
+                <div class="table-content">
+                  <div class="thead">
+                    <span class="header-cell fixed-col-code">井点编号</span>
+                    <span class="header-cell fixed-col-time">采样时间</span>
+                    <span
+                      v-for="metric in sidePanel.metrics"
+                      :key="metric"
+                      class="header-cell metric-header"
+                    >
+                      {{ metric }}
+                    </span>
+                  </div>
+                  <div class="tbody">
+                    <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
+                      <span class="cell-content fixed-col-code" :title="row.code">{{ row.code }}</span>
+                      <span class="cell-content fixed-col-time" :title="row.time">{{ row.time }}</span>
+                      <span
+                        class="cell-content metric-cell"
+                        v-for="metric in sidePanel.metrics"
+                        :key="metric"
+                        :title="getMetricCellTitle(row, metric)"
+                      >
+                        {{ getMetricCellValue(row, metric) }}
+                      </span>
+                    </div>
+                    <div v-if="sidePanel.table.length === 0" class="no-data">
+                      暂无历史数据
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -328,6 +345,68 @@ import { OlMap } from '@/olmap/index'
 import BasemapSwitcher from './BasemapSwitcher.vue'
 import { getMonitorWellInfo } from '@/api/monitorWell'
 import { getSampleDataRange } from '@/api/monitorData'
+
+const TOTAL_PHOSPHORUS_METRICS = [
+  '甲基对硫磷',
+  '马拉硫磷',
+  '五氟化磷',
+  '三氯化磷',
+  '三氟化磷',
+  '丙胺氟磷',
+  '三苯基磷',
+  '三(2-甲基氮丙啶)氧化磷',
+  '氧溴化磷',
+  '三溴化磷',
+  '五溴化磷',
+  '甲基内吸磷',
+  '定菌磷',
+  '碘吸磷',
+  '氯亚磷',
+  '甲基硫环磷',
+  '保米磷',
+  '辛硫磷',
+  '四丁基碘化磷',
+  '嘧啶硫磷',
+  '溴代毒鼠磷',
+  '氯硫磷',
+  '因毒磷',
+  '脱叶亚磷',
+  '异丙磷',
+  '敌杀磷',
+  '除线磷',
+  '育畜磷',
+  '杀螟硫磷',
+  '三氯氧磷',
+  '五氯化磷',
+  '嘧啶氧磷',
+  '糠硫磷',
+  '二嗪磷',
+  '甲基三硫磷',
+  '双硫磷',
+  '甲丙硫磷',
+  '三唑磷',
+  '甲基嘧啶磷',
+  '皮蝇磷',
+  '乙酰甲胺磷',
+  '三氧化二磷',
+  '五氧化二磷',
+  '五硫化二磷',
+  '三硫化四磷',
+  '七硫化四磷',
+  '三硫化二磷',
+  '白磷',
+  '田乐磷',
+  '灭蚜磷',
+  '四丁基氢氧化磷',
+  '红磷',
+  '溴硫磷',
+  '伏杀磷',
+  '丙硫磷',
+  '速灭磷',
+  '内吸磷',
+  '地胺磷',
+  '胺吸磷'
+]
 import * as echarts from 'echarts'
 
   export default {
@@ -360,6 +439,12 @@ import * as echarts from 'echarts'
           title: '',
           metricLabel: 'pH',
           table: [],
+          metrics: [],
+          unitMap: {},
+          chart: {
+            times: [],
+            series: []
+          },
           chartPoints: '20,150 80,120 140,70 200,40 260,90 320,130',
           wellCode: '',  // 监测井编码
           metricName: '',  // 指标名称
@@ -655,79 +740,143 @@ import * as echarts from 'echarts'
             endTime.setHours(23, 59, 59, 999);
           }
           
-          // 调用API获取历史数据（传参格式：年月日时分秒）
-          const response = await getSampleDataRange({
+          const metricNames =
+            this.sidePanel.metricName === '总磷'
+              ? TOTAL_PHOSPHORUS_METRICS
+              : [this.sidePanel.metricName];
+          
+          const baseParams = {
             monitoringWellCode: this.sidePanel.wellCode,
             startTime: this.formatDateTimeForApi(startTime),
-            endTime: this.formatDateTimeForApi(endTime),
-            metricName: this.sidePanel.metricName=='总磷'?'铁':this.sidePanel.metricName
-          });
+            endTime: this.formatDateTimeForApi(endTime)
+          };
           
-          if (response.code === 200 && response.data) {
-            const data = response.data;
-            const tableData = [];
-            const times = [];
-            const values = [];
-            
-            // 处理返回的数据（根据实际API返回格式调整）
-            let dataArray = [];
-            if (Array.isArray(data)) {
-              dataArray = data;
-            } else if (data.data && Array.isArray(data.data)) {
-              dataArray = data.data;
-            } else if (data.rows && Array.isArray(data.rows)) {
-              dataArray = data.rows;
+          const tableRowMap = new Map();
+          const metricSeriesData = {};
+          const unitMap = {};
+          const metricsSet = new Set();
+          
+          for (const metricName of metricNames) {
+            const response = await getSampleDataRange({
+              ...baseParams,
+              metricName
+            });
+            const dataArray = this.normalizeHistoryData(response);
+            if (!dataArray.length) {
+              continue;
             }
-            
-            // 获取单位（从第一个数据项获取）
-            let unit = '';
-            
             dataArray.forEach(item => {
               if (item.samplingTime && item.value !== undefined) {
                 const time = this.formatDateTime(item.samplingTime);
                 const value = item.value;
-                unit = item.unit || unit || '';
+                const numericValue = parseFloat(value);
+                const unit = item.unit || '';
+                metricsSet.add(metricName);
                 
-                tableData.push({
-                  code: this.sidePanel.wellCode,
-                  value: value,
-                  unit: unit,
-                  time: time
-                });
+                if (!tableRowMap.has(time)) {
+                  tableRowMap.set(time, {
+                    code: this.sidePanel.wellCode,
+                    time,
+                    values: {}
+                  });
+                }
+                const row = tableRowMap.get(time);
+                row.values[metricName] = {
+                  value,
+                  unit
+                };
                 
-                times.push(time);
-                values.push(parseFloat(value) || 0);
+                if (!metricSeriesData[metricName]) {
+                  metricSeriesData[metricName] = {};
+                }
+                metricSeriesData[metricName][time] = isNaN(numericValue) ? null : numericValue;
+                
+                if (unitMap[metricName] === undefined) {
+                  unitMap[metricName] = unit;
+                }
               }
             });
-            
-            // 按时间倒序排列
-            tableData.sort((a, b) => {
-              return new Date(b.time) - new Date(a.time);
-            });
-            
-            this.sidePanel.table = tableData;
-            
-            // 渲染图表（时间正序，用于图表显示）
-            const chartTimes = [...times].reverse();
-            const chartValues = [...values].reverse();
+          }
+          
+          const allTimesDesc = Array.from(tableRowMap.keys()).sort((a, b) => new Date(b) - new Date(a));
+          const allTimesAsc = [...allTimesDesc].reverse();
+          const metrics = Array.from(metricsSet);
+          
+          this.sidePanel.table = allTimesDesc.map(time => tableRowMap.get(time));
+          this.sidePanel.metrics = metrics;
+          this.sidePanel.unitMap = unitMap;
+          this.sidePanel.chart = {
+            times: allTimesAsc,
+            series: metrics.map(metricName => ({
+              name: metricName,
+              type: 'line',
+              showSymbol: false,
+              connectNulls: true,
+              data: allTimesAsc.map(time => metricSeriesData[metricName]?.[time] ?? null)
+            }))
+          };
+          
+          if (allTimesAsc.length && this.sidePanel.chart.series.some(series => series.data.some(val => val !== null && val !== undefined))) {
             this.$nextTick(() => {
-              this.renderSideChart(chartTimes, chartValues, unit);
+              this.renderSideChart(
+                this.sidePanel.chart.times,
+                this.sidePanel.chart.series,
+                this.sidePanel.unitMap
+              );
             });
           } else {
-            this.sidePanel.table = [];
             this.$nextTick(() => {
-              this.renderSideChart([], [], '');
+              this.renderSideChart([], [], {});
             });
           }
         } catch (error) {
           console.error('加载监测数据展板历史数据失败:', error);
           this.sidePanel.table = [];
+          this.sidePanel.metrics = [];
+          this.sidePanel.unitMap = {};
+          this.sidePanel.chart = { times: [], series: [] };
           this.$nextTick(() => {
-            this.renderSideChart([], [], '');
+            this.renderSideChart([], [], {});
           });
         } finally {
           this.sidePanel.loading = false;
         }
+      },
+      normalizeHistoryData(response) {
+        if (!response || response.code !== 200 || !response.data) {
+          return [];
+        }
+        const data = response.data;
+        if (Array.isArray(data)) {
+          return data;
+        }
+        if (Array.isArray(data?.data)) {
+          return data.data;
+        }
+        if (Array.isArray(data?.rows)) {
+          return data.rows;
+        }
+        return [];
+      },
+      getMetricCellValue(row, metricName) {
+        if (!row || !row.values || !row.values[metricName]) {
+          return '-';
+        }
+        const record = row.values[metricName];
+        const unit = record.unit && record.unit !== '/' ? record.unit : '';
+        if (record.value === undefined || record.value === null || record.value === '') {
+          return '-';
+        }
+        return `${record.value}${unit}`;
+      },
+      getMetricCellTitle(row, metricName) {
+        if (!row || !row.values || !row.values[metricName]) {
+          return `${metricName}: 暂无数据`;
+        }
+        const record = row.values[metricName];
+        const unit = record.unit && record.unit !== '/' ? record.unit : '';
+        const value = record.value === undefined || record.value === null || record.value === '' ? '-' : record.value;
+        return `${metricName}: ${value}${unit}`;
       },
       /**
        * 监测数据展板时间范围改变处理
@@ -775,10 +924,9 @@ import * as echarts from 'echarts'
         }
       },
       /**
-       * 渲染监测数据展板图表
+       * 渲染监测数据展板图表（支持多指标多折线）
        */
-      renderSideChart(times = null, values = null, unit = '') {
-        // 确保DOM已渲染
+      renderSideChart(times = null, series = null, unitMap = null) {
         this.$nextTick(() => {
           const el = this.$refs.sideChart;
           if (!el) {
@@ -786,89 +934,87 @@ import * as echarts from 'echarts'
             return;
           }
           
-          // 如果没有传入数据，从table中获取
-          if (times === null || values === null) {
-            times = (this.sidePanel.table || []).map(r => r.time).reverse();
-            values = (this.sidePanel.table || []).map(r => parseFloat(String(r.value)) || 0).reverse();
-            unit = this.sidePanel.table.length > 0 ? (this.sidePanel.table[0].unit || '') : '';
-          }
+          const fallbackChart = this.sidePanel.chart || { times: [], series: [] };
+          const resolvedTimes = Array.isArray(times) ? times : (fallbackChart.times || []);
+          const resolvedSeries = Array.isArray(series) ? series : (fallbackChart.series || []);
+          const resolvedUnitMap = unitMap || this.sidePanel.unitMap || {};
           
-          // 清理旧实例
+          const hasData =
+            resolvedTimes.length > 0 &&
+            resolvedSeries.some(item => Array.isArray(item.data) && item.data.some(val => val !== null && val !== undefined));
+          
           if (this.sideChartInstance) {
             this.sideChartInstance.dispose();
             this.sideChartInstance = null;
           }
           
-          if (times.length === 0 || values.length === 0) {
-            // 如果没有数据，不渲染图表
-            console.log('没有数据，不渲染图表', { times, values });
+          if (!hasData) {
             return;
           }
           
-          console.log('开始渲染图表', { times, values, unit });
-          
-          // 初始化图表
           this.sideChartInstance = echarts.init(el);
           
-          // 如果只有一条数据，优化显示方式
-          const isSingleData = times.length === 1 && values.length === 1;
+          const normalizedSeries = resolvedSeries.map(seriesItem => ({
+            ...seriesItem,
+            smooth: true,
+            showSymbol: false,
+            connectNulls: true,
+            emphasis: { focus: 'series' },
+            data: seriesItem.data.map(val => (val === undefined ? null : val))
+          }));
           
           const option = {
-            grid: { left: 40, right: 16, top: 50, bottom: 28 },
-            tooltip: { 
+            color: ['#4B9CFF', '#F7B500', '#34C38F', '#E56997', '#7A6FF0', '#FF8A65', '#2EC7C9'],
+            grid: { left: 48, right: 24, top: 70, bottom: 36 },
+            legend: {
+              data: normalizedSeries.map(item => item.name),
+              top: 12,
+              icon: 'circle'
+            },
+            tooltip: {
               trigger: 'axis',
-              formatter: (params) => {
-                const param = params[0];
-                return `${param.name}<br/>${param.seriesName}: ${param.value}${unit && unit !== '/' ? ' ' + unit : ''}`;
+              axisPointer: { type: 'line' },
+              formatter: params => {
+                if (!params?.length) {
+                  return '';
+                }
+                const header = params[0].name;
+                const lines = params
+                  .filter(p => p.value !== null && p.value !== undefined)
+                  .map(p => {
+                    const unit = resolvedUnitMap[p.seriesName] && resolvedUnitMap[p.seriesName] !== '/' ? ` ${resolvedUnitMap[p.seriesName]}` : '';
+                    return `${p.marker}${p.seriesName}: ${p.value}${unit}`;
+                  });
+                return [header, ...lines].join('<br/>');
               }
             },
-            xAxis: { 
-              type: 'category', 
-              data: times, 
-              axisLabel: { 
+            xAxis: {
+              type: 'category',
+              data: resolvedTimes,
+              axisLabel: {
                 color: '#64748b',
-                rotate: isSingleData ? 0 : 45,  // 单条数据时不旋转
-                fontSize: 10
+                rotate: resolvedTimes.length > 8 ? 30 : 0,
+                fontSize: 10,
+                formatter: value => value.split(' ')[0]
               },
-              // 单条数据时，确保x轴显示完整
-              boundaryGap: isSingleData ? true : false
+              boundaryGap: false
             },
-            yAxis: { 
-              type: 'value', 
+            yAxis: {
+              type: 'value',
               axisLabel: { color: '#64748b' },
-              name: unit && unit !== '/' ? unit : '',
+              name: '指标值',
               nameLocation: 'end',
               splitLine: { lineStyle: { color: 'rgba(0,0,0,0.08)' } },
-              // 单条数据时，优化y轴范围显示
-              scale: !isSingleData  // 多条数据时使用scale，单条数据时不使用
+              scale: true
             },
-            series: [{
-              name: this.sidePanel.metricLabel,
-              type: 'line',
-              data: values,
-              smooth: !isSingleData,  // 单条数据时不使用平滑曲线
-              symbolSize: isSingleData ? 10 : 6,  // 单条数据时增大标记点
-              lineStyle: { width: 3, color: '#3b82f6' },
-              itemStyle: { 
-                color: '#3b82f6',
-                borderWidth: isSingleData ? 2 : 0,  // 单条数据时添加边框
-                borderColor: '#fff'
-              },
-              // 单条数据时不显示面积填充
-              areaStyle: isSingleData ? null : { color: 'rgba(59,130,246,0.08)' },
-              // 单条数据时确保显示标记点
-              showSymbol: true,
-              symbol: 'circle'
-            }]
+            series: normalizedSeries
           };
           
           this.sideChartInstance.setOption(option);
           
-          // 自适应调整
           setTimeout(() => {
             if (this.sideChartInstance) {
               this.sideChartInstance.resize();
-              console.log('图表渲染完成');
             }
           }, 100);
         });
@@ -1347,29 +1493,73 @@ import * as echarts from 'echarts'
   .table { 
     border:1px solid rgba(0,0,0,0.06); 
     border-radius:8px; 
-    overflow:hidden; 
     font-size: 12px; 
     display: flex;
     flex-direction: column;
     height: 280px;
     min-height: 280px;
   }
-  .thead, .tr { display:grid; grid-template-columns: 1fr 60px 1.2fr; }
+  .table-scroll {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .table-content {
+    min-width: max-content;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .table-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+  }
+  .table-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .thead,
+  .tr {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(120px, auto);
+    align-items: stretch;
+  }
   .thead { 
     background:#f9fafb; 
     font-weight:600; 
     color:#374151; 
     font-size: 12px; 
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
   .tbody {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
+    min-width: max-content;
+    display: flex;
+    flex-direction: column;
   }
   .thead span, .tr span { padding:6px 8px; border-bottom:1px solid rgba(0,0,0,0.06); }
   .thead span { font-size: 12px; }
   .tr span { font-size: 12px; }
+  .header-cell {
+    white-space: nowrap;
+  }
+  .fixed-col-code {
+    min-width: 120px;
+  }
+  .fixed-col-time {
+    min-width: 150px;
+  }
+  .metric-header,
+  .metric-cell {
+    min-width: 130px;
+  }
   .cell-content {
     display: block;
     white-space: nowrap;

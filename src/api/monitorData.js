@@ -100,6 +100,28 @@ export function getSampleDataRange(params) {
 }
 
 /**
+ * 获取监测井指标的质量等级信息
+ * @param {Object} params - 查询参数
+ * @param {string} params.monitoringWellCode - 监测井编号（必填）
+ * @param {string} [params.startTime] - 开始时间，格式: yyyy-MM-dd HH:mm:ss（可选）
+ * @param {string} [params.endTime] - 结束时间，格式: yyyy-MM-dd HH:mm:ss（可选）
+ * @returns {Promise} 返回质量等级数据 { code, msg, data }
+ * @example
+ * getSampleQualityLevels({
+ *   monitoringWellCode: '152501J0001',
+ *   startTime: '2021-08-01 00:00:00',
+ *   endTime: '2021-08-31 23:59:59'
+ * })
+ */
+export function getSampleQualityLevels(params) {
+  return request({
+    url: '/monitor/sample/quality-levels',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 新增监测样本数据
  * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
  * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。
