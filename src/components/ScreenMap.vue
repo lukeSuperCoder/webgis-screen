@@ -166,129 +166,42 @@
             </button>
           </div>
           <div class="popup-body">
-            <!-- 综合水质分布弹框 -->
-            <div v-if="popupData && popupData.metricValues && popupData.overallClass" class="comprehensive-info">
+            <!-- 综合水质历史表格弹框（综合水质标记点击） -->
+            <div
+              v-if="popupData"
+              class="comprehensive-quality-table"
+            >
               <div class="info-row">
-                <span class="label">时间:</span>
-                <span class="value">{{ popupData.measureTime }}</span>
-                <span class="label" style="margin-left:12px;">综合水质:</span>
-                <span class="value">{{ popupData.overallClass }}</span>
+                <span class="label">监测井:</span>
+                <span class="value">{{ popupData.wellCode }}</span>
               </div>
-              <div class="grid">
-                <div 
-                  v-for="metric in popupData.metricValues" 
-                  :key="metric.metricCode"
-                  class="cell"
-                >
-                  <span class="label">{{ metric.metricName }}:</span>
-                  <span class="value">{{ metric.value }}<span v-if="metric.unit && metric.unit !== '/'">{{ metric.unit }}</span></span>
-                </div>
+              <div class="quality-table-wrapper">
+                <table class="quality-table">
+                  <thead>
+                    <tr>
+                      <th>监测时间</th>
+                      <th>水质等级</th>
+                    </tr>
+                  </thead>
+                  <tbody v-if="popupData.qualityTable && popupData.qualityTable.length">
+                    <tr v-for="(row, idx) in popupData.qualityTable" :key="idx">
+                      <td>{{ row.time }}</td>
+                      <td>
+                        <span :class="['quality-level', getQualityLevelClass(row.qualityLevel)]">
+                          {{ row.qualityLevel || '未知' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tbody v-else>
+                    <tr>
+                      <td colspan="3">暂无数据</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-            
-            <!-- 监测井信息 -->
-            <div v-else-if="popupData.wellCode || popupData.well_code" class="well-info">
-              <div class="info-item">
-                <span class="label">监测井编码:</span>
-                <span class="value">{{ popupData.wellCode || popupData.well_code }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">项目编码:</span>
-                <span class="value">{{ popupData.projectId || popupData.project_code }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">地理位置:</span>
-                <span class="value">{{ popupData.provinceName }} {{ popupData.cityName }} {{ popupData.countyName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">经纬度:</span>
-                <span class="value">{{ popupData.longitude }}, {{ popupData.latitude }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">成井深度:</span>
-                <span class="value">{{ popupData.wellDepth || popupData.well_depth }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">水位埋深:</span>
-                <span class="value">{{ popupData.waterLevelDepth || popupData.water_level_depth }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">井口高程:</span>
-                <span class="value">{{ popupData.wellheadElevation || popupData.well_head_elevation }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">井管材质:</span>
-                <span class="value">{{ popupData.wellPipeMaterial || popupData.well_pipe_material }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">权属单位:</span>
-                <span class="value">{{ popupData.wellOwnershipUnit || popupData.well_ownership_unit }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">埋藏条件:</span>
-                <span class="value">{{ popupData.burialCondition }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">含水层介质:</span>
-                <span class="value">{{ popupData.aquiferMedium }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">区域监测点:</span>
-                <span class="value">{{ popupData.isAreaMonitoringPoint || popupData.is_regional_monitoring_point }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">水源监测点:</span>
-                <span class="value">{{ popupData.isWaterSourceMonitoringPoint || popupData.is_water_source_monitoring_point }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">污染源监测点:</span>
-                <span class="value">{{ popupData.isPollutionSourceMonitoringPoint || popupData.is_pollution_source_monitoring_point }}</span>
-              </div>
-              <div v-if="popupData.pollutionSourceInfo && popupData.pollutionSourceInfo !== '无'" class="info-item">
-                <span class="label">污染源信息:</span>
-                <span class="value">{{ popupData.pollutionSourceInfo }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">符合长期监测要求:</span>
-                <span class="value">{{ popupData.isSuitableForLongTermMonitoring || popupData.meets_long_term_monitoring_requirements }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">开展维护管理:</span>
-                <span class="value">{{ popupData.isMaintenanceManagementCarriedOut || popupData.has_maintenance_management }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">实际维护单位:</span>
-                <span class="value">{{ popupData.actualMaintenanceManagementUnit || popupData.actual_maintenance_unit }}</span>
-              </div>
-              <div v-if="popupData.error" class="info-item error">
-                <span class="label">错误信息:</span>
-                <span class="value">{{ popupData.error }}</span>
-              </div>
-            </div>
-            
-            <!-- 其他类型信息 -->
-            <div v-else class="other-info">
-              <div class="info-item">
-                <span class="label">MaxLoss:</span>
-                <span class="value">{{ popupData.MaxLoss }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Date:</span>
-                <span class="value">{{ popupData.Date }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">UpstreamRegion:</span>
-                <span class="value">{{ popupData.UpstreamRegion }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">UpstreamSector:</span>
-                <span class="value">{{ popupData.UpstreamSector }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">nuts2:</span>
-                <span class="value">{{ popupData.nuts2 }}</span>
-              </div>
-            </div>
+            </div>         
+
           </div>
         </div>
       </div>
@@ -344,7 +257,7 @@
 import { OlMap } from '@/olmap/index'
 import BasemapSwitcher from './BasemapSwitcher.vue'
 import { getMonitorWellInfo } from '@/api/monitorWell'
-import { getSampleDataRange } from '@/api/monitorData'
+import { getSampleQualityLevels } from '@/api/monitorData'
 
 const TOTAL_PHOSPHORUS_METRICS = [
   '甲基对硫磷',
@@ -517,8 +430,8 @@ import * as echarts from 'echarts'
             const data = featureData.properties;
             console.log('current click data:', data);
             
-            // 单项水质分布：在右侧面板显示
-            if (data.popupType === 'singleItem') {
+            // 单项水质分布（除综合水质外）：在右侧面板显示
+            if (data.popupType === 'singleItem' && data.metricName !== '综合水质') {
               this.sidePanel.visible = true;
               const label = data.metricName || (data.parameter === 'ph' ? 'pH' : (data.parameter === 'phosphorus' ? '总磷值' : '指标'));
               this.sidePanel.title = `单项水质分布数据展板`;
@@ -538,27 +451,9 @@ import * as echarts from 'echarts'
               return; // 不再展示中心弹窗
             }
 
-            // 综合水质分布：按设计图展示中心弹窗
-            if (data.popupType === 'comprehensive') {
-              console.log('Comprehensive popup, metricValues:', data.metricValues);
-              
-              // 只显示中心弹窗，不显示右侧监测井信息面板
-              this.popupData = {
-                name: `${data.projectName || '项目名称'}  ${data.wellCode || ''}`,
-                measureTime: data.measureTime || '未知',
-                overallClass: data.overallClass || '未知',
-                metricValues: data.metricValues || []  // 直接使用 metricValues 数组
-              };
-              this.showPopup = true;
-              
-              // 计算弹框位置，确保不超出屏幕范围
-              this.$nextTick(() => {
-                this.popupStyle = this.calculatePopupPosition(event.pixel);
-              });
-              
-              // 确保不显示右侧监测井信息面板
-              this.wellInfoPanel.visible = false;
-              
+            // 综合水质分布（单项模式）：调用历史接口并使用弹框展示综合水质等级表格
+            if (data.popupType === 'singleItem' && data.metricName === '综合水质') {
+              await this.loadComprehensiveHistoryForPopup(data, event);
               return;
             }
 
@@ -718,7 +613,7 @@ import * as echarts from 'echarts'
         return metric.class || ''
       },
       /**
-       * 加载监测数据展板历史数据
+       * 加载监测数据展板历史数据（基于质量等级接口 /monitor/sample/quality-levels）
        */
       async loadSidePanelHistoryData() {
         if (!this.sidePanel.wellCode || !this.sidePanel.metricName) {
@@ -740,63 +635,70 @@ import * as echarts from 'echarts'
             endTime.setHours(23, 59, 59, 999);
           }
           
-          const metricNames =
-            this.sidePanel.metricName === '总磷'
-              ? TOTAL_PHOSPHORUS_METRICS
-              : [this.sidePanel.metricName];
-          
-          const baseParams = {
-            monitoringWellCode: this.sidePanel.wellCode,
+          // 调用质量等级接口，按监测井和时间范围获取所有指标数据
+          const response = await getSampleQualityLevels({
+            monitoringWellCode: this.sidePanel.wellCode, // 后端参数名为 monitoringWellCode
             startTime: this.formatDateTimeForApi(startTime),
             endTime: this.formatDateTimeForApi(endTime)
-          };
-          
+          });
+
+          const dataArray = this.normalizeHistoryData(response);
+
           const tableRowMap = new Map();
           const metricSeriesData = {};
           const unitMap = {};
           const metricsSet = new Set();
-          
-          for (const metricName of metricNames) {
-            const response = await getSampleDataRange({
-              ...baseParams,
-              metricName
-            });
-            const dataArray = this.normalizeHistoryData(response);
-            if (!dataArray.length) {
-              continue;
+
+          const targetMetricName = this.sidePanel.metricName;
+
+          dataArray.forEach(item => {
+            const samplingTime = item.samplingTime || item.sampleTime;
+            const metricValues = Array.isArray(item.metricValues) ? item.metricValues : [];
+
+            if (!samplingTime || !metricValues.length) {
+              return;
             }
-            dataArray.forEach(item => {
-              if (item.samplingTime && item.value !== undefined) {
-                const time = this.formatDateTime(item.samplingTime);
-                const value = item.value;
-                const numericValue = parseFloat(value);
-                const unit = item.unit || '';
-                metricsSet.add(metricName);
-                
-                if (!tableRowMap.has(time)) {
-                  tableRowMap.set(time, {
-                    code: this.sidePanel.wellCode,
-                    time,
-                    values: {}
-                  });
-                }
-                const row = tableRowMap.get(time);
-                row.values[metricName] = {
-                  value,
-                  unit
-                };
-                
-                if (!metricSeriesData[metricName]) {
-                  metricSeriesData[metricName] = {};
-                }
-                metricSeriesData[metricName][time] = isNaN(numericValue) ? null : numericValue;
-                
-                if (unitMap[metricName] === undefined) {
-                  unitMap[metricName] = unit;
-                }
-              }
+
+            // 在返回的 metricValues 中找到与当前点位对应的指标
+            const matchedMetric = metricValues.find(m => {
+              const name = m.metricName || m.metricCode || '';
+              return name === targetMetricName;
             });
-          }
+
+            if (!matchedMetric || matchedMetric.value === undefined || matchedMetric.value === null || matchedMetric.value === '') {
+              return;
+            }
+
+            const time = this.formatDateTime(samplingTime);
+            const value = matchedMetric.value;
+            const numericValue = parseFloat(value);
+            const unit = matchedMetric.unit || '';
+
+            metricsSet.add(targetMetricName);
+
+            if (!tableRowMap.has(time)) {
+              tableRowMap.set(time, {
+                code: this.sidePanel.wellCode,
+                time,
+                values: {}
+              });
+            }
+
+            const row = tableRowMap.get(time);
+            row.values[targetMetricName] = {
+              value,
+              unit
+            };
+
+            if (!metricSeriesData[targetMetricName]) {
+              metricSeriesData[targetMetricName] = {};
+            }
+            metricSeriesData[targetMetricName][time] = isNaN(numericValue) ? null : numericValue;
+
+            if (unitMap[targetMetricName] === undefined) {
+              unitMap[targetMetricName] = unit;
+            }
+          });
           
           const allTimesDesc = Array.from(tableRowMap.keys()).sort((a, b) => new Date(b) - new Date(a));
           const allTimesAsc = [...allTimesDesc].reverse();
@@ -840,6 +742,74 @@ import * as echarts from 'echarts'
           });
         } finally {
           this.sidePanel.loading = false;
+        }
+      },
+      /**
+       * 加载综合水质历史数据并通过弹框展示（水质等级表格）
+       */
+      async loadComprehensiveHistoryForPopup(data, event) {
+        if (!data || !data.wellCode) {
+          return;
+        }
+
+        try {
+          // 计算时间范围：优先使用 sidePanel 的时间范围，其次使用默认 2020-2025
+          const startTime = this.sidePanel.startTime
+            ? new Date(this.sidePanel.startTime + 'T00:00:00')
+            : new Date('2020-01-01T00:00:00');
+          const endTime = this.sidePanel.endTime
+            ? new Date(this.sidePanel.endTime + 'T23:59:59')
+            : new Date('2025-12-31T23:59:59');
+
+          const response = await getSampleQualityLevels({
+            monitoringWellCode: data.wellCode,
+            startTime: this.formatDateTimeForApi(startTime),
+            endTime: this.formatDateTimeForApi(endTime)
+          });
+
+          const dataArray = this.normalizeHistoryData(response);
+
+          const rows = (dataArray || [])
+            .map(item => {
+              const samplingTime = item.samplingTime || item.sampleTime;
+              const qualityLevel = item.qualityLevel || item.overallClass || item.level;
+              if (!samplingTime || !qualityLevel) {
+                return null;
+              }
+              return {
+                wellCode: item.monitoringWellCode || item.wellCode || data.wellCode,
+                time: this.formatDateTime(samplingTime),
+                qualityLevel
+              };
+            })
+            .filter(item => item !== null);
+
+          this.popupData = {
+            name: `${data.projectName || '综合水质'}`,
+            wellCode: data.wellCode || '',
+            qualityTable: rows
+          };
+
+          this.showPopup = true;
+
+          // 计算弹框位置，确保不超出屏幕范围
+          this.$nextTick(() => {
+            this.popupStyle = this.calculatePopupPosition(event.pixel);
+          });
+
+          // 不显示右侧监测井信息面板
+          this.wellInfoPanel.visible = false;
+        } catch (error) {
+          console.error('加载综合水质历史数据失败:', error);
+          this.popupData = {
+            name: `${data.projectName || '综合水质历史'}  ${data.wellCode || ''}`,
+            wellCode: data.wellCode || '',
+            qualityTable: []
+          };
+          this.showPopup = true;
+          this.$nextTick(() => {
+            this.popupStyle = this.calculatePopupPosition(event.pixel);
+          });
         }
       },
       normalizeHistoryData(response) {
