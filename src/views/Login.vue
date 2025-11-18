@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <el-card class="login-card">
-      <div class="title">呼伦贝尔市地下水环境监管系统</div>
+      <div class="title">锡林郭勒盟地下水环境监管系统</div>
       <el-form :model="loginForm" :rules="rules" ref="loginForm" class="login-form">
         <el-form-item prop="username">
           <el-input 

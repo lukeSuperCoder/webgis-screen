@@ -6,23 +6,6 @@
       <div class="panel-header">
         <div class="filters">
           <el-form :inline="true" :model="filters" class="filter-form" size="small">
-            <el-form-item label="所属项目:" label-width="80px">
-              <el-select 
-                v-model="filters.project" 
-                placeholder="请选择项目"
-                style="width: 160px;"
-                clearable
-                popper-append-to-body
-                popper-class="monitoring-panel-select-dropdown"
-              >
-                <el-option 
-                  v-for="project in projectList" 
-                  :key="project.projectCode || project.id"
-                  :label="project.projectCode || '未知'"
-                  :value="project.projectCode || project.id"
-                ></el-option>
-              </el-select>
-            </el-form-item>
             <el-form-item label="监测井选择:" label-width="90px">
               <el-select 
                 v-model="filters.well" 
@@ -76,81 +59,34 @@
           height="600px"
         >
           <el-table-column type="index" label="序号" width="60" align="center"></el-table-column>
-          <el-table-column prop="stationName" label="站点名称" align="center" min-width="120"></el-table-column>
-          <el-table-column prop="monitorTime" label="监测时间" align="center" min-width="160"></el-table-column>
-          <el-table-column prop="waterTemp" label="水温(°C)" align="center" width="100">
+          <el-table-column prop="monitoringWellCode" label="监测井编号" align="center" min-width="140"></el-table-column>
+          <el-table-column prop="samplingTime" label="监测时间" align="center" min-width="180">
             <template slot-scope="scope">
-              {{ scope.row.waterTemp || '--' }}
+              {{ formatDateTime(scope.row.samplingTime) }}
             </template>
           </el-table-column>
-          <el-table-column prop="turbidity" label="浊度(NTU)" align="center" width="100">
+          <el-table-column
+            v-for="metric in metricColumns"
+            :key="metric.key"
+            :prop="metric.key"
+            :label="metric.label"
+            align="center"
+            min-width="120"
+          >
             <template slot-scope="scope">
-              {{ scope.row.turbidity || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="ph" label="pH" align="center" width="80">
-            <template slot-scope="scope">
-              {{ scope.row.ph || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="dissolvedOxygen" label="溶解氧(mg/L)" align="center" width="120">
-            <template slot-scope="scope">
-              {{ scope.row.dissolvedOxygen || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="chlorophyll" label="叶绿素(µ/L)" align="center" width="120">
-            <template slot-scope="scope">
-              {{ scope.row.chlorophyll || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="permanganate" label="高猛酸盐(mg/L)" align="center" width="130">
-            <template slot-scope="scope">
-              {{ scope.row.permanganate || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalPhosphorus" label="总磷(mg/L)" align="center" width="100">
-            <template slot-scope="scope">
-              {{ scope.row.totalPhosphorus || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalNitrogen" label="总氮(mg/L)" align="center" width="100">
-            <template slot-scope="scope">
-              {{ scope.row.totalNitrogen || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="ammoniaNitrogen" label="氨氮(mg/L)" align="center" width="100">
-            <template slot-scope="scope">
-              {{ scope.row.ammoniaNitrogen || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalIron" label="总铁(mg/L)" align="center" width="100">
-            <template slot-scope="scope">
-              {{ scope.row.totalIron || '--' }}
+              <span :style="{ color: getLevelColor(scope.row.metrics && scope.row.metrics[metric.key] ? scope.row.metrics[metric.key].level : '') }">
+                {{ scope.row.metrics && scope.row.metrics[metric.key] ? scope.row.metrics[metric.key].value : '--' }}
+              </span>
             </template>
           </el-table-column>
         </el-table>
-        
-        <!-- 分页 -->
-        <el-pagination
-          v-if="total > 0"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="currentPage"
-          :page-sizes="[10, 20, 50, 100]"
-          :page-size="pageSize"
-          layout="total, sizes, prev, pager, next"
-          :total="total"
-          size="small"
-          style="margin-top: 20px; text-align: right;"
-        ></el-pagination>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { getSampleList } from '@/api/monitorData'
-import { getProjectList } from '@/api/project'
+import { getSampleQualityLevels } from '@/api/monitorData'
 import { getMonitorWellCodes } from '@/api/monitorWell'
 
 export default {
@@ -158,7 +94,6 @@ export default {
   data() {
     return {
       filters: {
-        project: '',
         well: '',
         startDate: '',
         endDate: ''
@@ -167,40 +102,20 @@ export default {
       tableData: [],
       loading: false,
       // 下拉选项数据
-      projectList: [],
       wellList: [],
-      // 分页
-      currentPage: 1,
-      pageSize: 10,
-      total: 0,
-      // 指标编码映射表（用于从metricValues中提取指标值）
-      metricCodeMap: {
-        'G0001': 'waterTemp',      // 水温
-        'G0002': 'turbidity',      // 浊度
-        'G0005': 'ph',             // pH
-        'G0003': 'dissolvedOxygen', // 溶解氧
-        'G0006': 'chlorophyll',    // 叶绿素
-        'G0017': 'permanganate',   // 高锰酸盐指数
-        'G0012': 'totalPhosphorus', // 总磷
-        'G0011': 'totalNitrogen',  // 总氮
-        'G0018': 'ammoniaNitrogen', // 氨氮
-        'G0019': 'totalIron'       // 总铁
-      }
+      // 动态指标列定义
+      metricColumns: [],
+      // 指标名到列 key 的映射
+      metricNameKeyMap: {}
     }
   },
   mounted() {
     this.initFilters()
-    this.loadProjectList()
     this.loadWellList()
     this.loadDataList()
   },
   watch: {
-    'filters.project'() {
-      this.currentPage = 1
-      this.loadDataList()
-    },
     'filters.well'() {
-      this.currentPage = 1
       this.loadDataList()
     }
   },
@@ -230,22 +145,6 @@ export default {
         this.filters.startDate = ''
         this.filters.endDate = ''
       }
-      this.currentPage = 1
-      this.loadDataList()
-    },
-    /**
-     * 分页大小改变
-     */
-    handleSizeChange(val) {
-      this.pageSize = val
-      this.currentPage = 1
-      this.loadDataList()
-    },
-    /**
-     * 当前页改变
-     */
-    handleCurrentChange(val) {
-      this.currentPage = val
       this.loadDataList()
     },
     /**
@@ -297,24 +196,6 @@ export default {
       }
     },
     /**
-     * 加载项目列表
-     */
-    async loadProjectList() {
-      try {
-        const response = await getProjectList({
-          pageNum: 1,
-          pageSize: 1000
-        })
-        if (response.code === 0 && response.rows) {
-          // 项目列表已经是数组格式，直接使用
-          this.projectList = response.rows || []
-        }
-      } catch (error) {
-        console.error('获取项目列表失败:', error)
-        this.projectList = []
-      }
-    },
-    /**
      * 加载监测井列表
      */
     async loadWellList() {
@@ -345,20 +226,10 @@ export default {
     async loadDataList() {
       this.loading = true
       try {
-        const params = {
-          pageNum: this.currentPage,
-          pageSize: this.pageSize
-        }
+        const params = {}
         
-        // 项目筛选
-        if (this.filters.project && this.filters.project !== 'all') {
-          params.projectId = this.filters.project
-        }
-        
-        // 监测井筛选
-        if (this.filters.well && this.filters.well !== 'all') {
-          params.monitoringWellCode = this.filters.well
-        }
+        // 监测井筛选（始终传递参数，默认空字符串）
+        params.monitoringWellCode = this.filters.well || ''
         
         // 时间范围筛选（格式：年月日时分秒）
         if (this.filters.startDate) {
@@ -370,44 +241,31 @@ export default {
           params.endTime = this.formatDateTimeForApi(endDate)
         }
         
-        const response = await getSampleList(params)
-        
-        if (response.code === 200) {
-          const rows = response.rows || []
-          this.total = response.total || 0
-          
-          // 转换数据格式
-          this.tableData = rows.map(item => {
-            const row = {
-              stationName: item.monitoringWellCode || '未知',
-              monitorTime: this.formatDateTime(item.samplingTime),
-              waterTemp: '',
-              turbidity: '',
-              ph: '',
-              dissolvedOxygen: '',
-              chlorophyll: '',
-              permanganate: '',
-              totalPhosphorus: '',
-              totalNitrogen: '',
-              ammoniaNitrogen: '',
-              totalIron: ''
-            }
-            
-            // 从metricValues中提取指标值
+        const response = await getSampleQualityLevels(params)
+
+        if (response.code === 200 && Array.isArray(response.data)) {
+          const records = response.data || []
+
+          // 生成动态指标列（根据第一条记录的 metricValues）
+          this.buildMetricColumns(records)
+
+          // 转换数据为表格行
+          this.tableData = records.map(item => {
+            const metricsMap = {}
             if (item.metricValues && Array.isArray(item.metricValues)) {
               item.metricValues.forEach(metric => {
-                const metricCode = metric.metricCode
-                const value = metric.value
-                
-                // 根据metricCode映射到对应的字段
-                if (this.metricCodeMap[metricCode]) {
-                  const fieldName = this.metricCodeMap[metricCode]
-                  row[fieldName] = value !== undefined && value !== null ? value : ''
+                const key = this.getMetricKeyByName(metric.metricName)
+                metricsMap[key] = {
+                  value: metric.value,
+                  level: metric.level || metric.qualityLevel || ''
                 }
               })
             }
-            
-            return row
+            return {
+              monitoringWellCode: item.monitoringWellCode || '未知',
+              samplingTime: item.samplingTime,
+              metrics: metricsMap
+            }
           })
         } else {
           this.tableData = []
@@ -421,6 +279,65 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    /**
+     * 根据返回数据构建动态指标列
+     */
+    buildMetricColumns(records) {
+      const metricNameSet = new Set()
+      const nameKeyMap = {}
+      const nameLabelMap = {}
+
+      records.forEach(item => {
+        if (item.metricValues && Array.isArray(item.metricValues)) {
+          item.metricValues.forEach(metric => {
+            if (metric.metricName) {
+              const name = metric.metricName
+              const unit = metric.unit
+              const label = unit && unit !== '/' ? `${name}(${unit})` : name
+              metricNameSet.add(name)
+              if (!nameKeyMap[name]) {
+                // 将指标名转换成字段 key（去除空格和特殊字符）
+                const key = 'm_' + name.replace(/\s+/g, '').replace(/[()（）/%]/g, '_')
+                nameKeyMap[name] = key
+                nameLabelMap[name] = label
+              }
+            }
+          })
+        }
+      })
+
+      this.metricColumns = Array.from(metricNameSet).map(name => ({
+        key: nameKeyMap[name],
+        label: nameLabelMap[name] || name
+      }))
+      this.metricNameKeyMap = nameKeyMap
+    },
+    /**
+     * 根据指标名获取列 key
+     */
+    getMetricKeyByName(metricName) {
+      if (!metricName) return ''
+      if (this.metricNameKeyMap[metricName]) {
+        return this.metricNameKeyMap[metricName]
+      }
+      const key = 'm_' + metricName.replace(/\s+/g, '').replace(/[()（）/%]/g, '_')
+      this.$set(this.metricNameKeyMap, metricName, key)
+      return key
+    },
+    /**
+     * 根据质量等级获取颜色（复用水质类别图例的颜色规则）
+     */
+    getLevelColor(level) {
+      if (!level) return ''
+      const text = String(level)
+      if (text.includes('Ⅰ类')) return '#00E400'
+      if (text.includes('Ⅱ类')) return '#00B0F0'
+      if (text.includes('Ⅲ类')) return '#FFFF00'
+      if (text.includes('Ⅳ类')) return '#FFC000'
+      if (text.includes('Ⅴ类')) return '#FF0000'
+      if (text.includes('劣Ⅴ类')) return '#800080'
+      return ''
     },
     closePanel() {
       this.$emit('close');

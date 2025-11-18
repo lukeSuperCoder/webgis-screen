@@ -172,43 +172,19 @@
                 }
             },
             /**
-             * 加载综合水质分布数据
+             * 加载综合水质分布数据（使用与单项指标相同的上图逻辑，metricName 固定为 summary）
              */
             async loadComprehensiveWaterQuality() {
                 try {
                     this.isLoadingSampleData = true
 
-                    // 1. 先获取监测井列表
-                    if (this.wellData.length === 0) {
-                        await this.loadWellData()
+                    const indicator = {
+                        metricName: 'summary',
+                        value: 'summary',
+                        label: '综合水质'
                     }
 
-                    if (this.wellData.length === 0) {
-                        this.$message.warning('暂无监测井数据')
-                        return
-                    }
-
-                    // 2. 批量查询所有监测井的水质数据（使用列表接口）
-                    const results = await this.batchGetSampleData(this.queryDate)
-                    
-                    // 3. 将水质数据映射到 sampleData
-                    this.sampleData = {}
-                    results.forEach(result => {
-                        if (result.data) {
-                            this.sampleData[result.data.monitoringWellCode] = result.data
-                        }
-                    })
-
-                    // 4. 生成地图标记数据
-                    const mapData = this.generateComprehensiveMapData()
-
-                    // 5. 渲染到地图
-                    this.renderComprehensiveLayer(mapData)
-
-                    // 6. 显示图例
-                    this.showComprehensiveLegend()
-
-
+                    await this.loadSingleMetricData(indicator)
                 } catch (error) {
                     console.error('加载综合水质数据失败:', error)
                     this.$message.error('加载水质数据失败，请重试')
@@ -327,7 +303,7 @@
                     { label: 'IV类', color: '#f3d231', range: '' },
                     { label: 'V类', color: '#ff8c31', range: '' },
                     { label: '劣V类', color: '#ff2a1a', range: '' },
-                    { label: '未知', color: '#999999', range: '' }
+                    { label: '无质量等级', color: '#999999', range: '' }
                 ]
                 this.showLegend = true
             },
@@ -369,28 +345,19 @@
             },
             // 处理监测井数据格式
             processWellData(rawData) {
-                const parsePointWKT = (wkt) => {
-                    // 支持格式: POINT(112.016666 43.54075)
-                    if (!wkt || typeof wkt !== 'string') return null;
-                    const match = wkt.trim().match(/^POINT\s*\(\s*([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s*\)$/i);
-                    if (!match) return null;
-                    const lon = Number(match[1]);
-                    const lat = Number(match[2]);
-                    if (Number.isNaN(lon) || Number.isNaN(lat)) return null;
-                    return [lon, lat];
-                };
-
-                return (rawData || []).map((well, index) => {
-                    const coordsFromWkt = parsePointWKT(well.geom);
-                    const coordinates = coordsFromWkt || [well.longitude, well.latitude];
+                const wellTypes = ['国家级监测井', '国家级考察井', '省市级监测井', '防治区补充井', '背景值调查井'];
+                
+                return (rawData || []).reduce((acc, well) => {
+                    const coordinates = this.getCoordinatesFromWell(well);
+                    if (!coordinates) {
+                        return acc;
+                    }
                     
-                    // 根据索引或其他逻辑分配监测井类别（这里使用模拟逻辑）
-                    const wellTypes = ['国家级监测井', '国家级考察井', '省市级监测井', '防治区补充井', '背景值调查井'];
-                    const wellType = wellTypes[index % wellTypes.length];
+                    const wellType = wellTypes[acc.length % wellTypes.length];
                     const wellColor = this.getWellTypeColor(wellType);
                     const wellCode = well.wellCode || well.well_code;
                     
-                    return {
+                    acc.push({
                         wellCode: wellCode,  // 保存wellCode用于后续查询
                         coordinates,
                         properties: {
@@ -406,8 +373,39 @@
                             fillColor: wellColor,
                             strokeWidth: 1
                         }
-                    };
-                });
+                    });
+                    
+                    return acc;
+                }, []);
+            },
+            parsePointWKT(wkt) {
+                if (!wkt || typeof wkt !== 'string') return null;
+                const match = wkt.trim().match(/^POINT\s*\(\s*([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)\s*\)$/i);
+                if (!match) return null;
+                const lon = Number(match[1]);
+                const lat = Number(match[2]);
+                if (Number.isNaN(lon) || Number.isNaN(lat)) return null;
+                return [lon, lat];
+            },
+            getCoordinatesFromWell(well) {
+                if (!well) return null;
+                const coordsFromWkt = this.parsePointWKT(well.geom || well.geometry);
+                if (coordsFromWkt) return coordsFromWkt;
+                
+                if (Array.isArray(well.coordinates) && well.coordinates.length >= 2) {
+                    const lon = Number(well.coordinates[0]);
+                    const lat = Number(well.coordinates[1]);
+                    if (!Number.isNaN(lon) && !Number.isNaN(lat)) {
+                        return [lon, lat];
+                    }
+                }
+                
+                const lon = Number(well.longitude ?? well.lon ?? well.lng);
+                const lat = Number(well.latitude ?? well.lat);
+                if (!Number.isNaN(lon) && !Number.isNaN(lat)) {
+                    return [lon, lat];
+                }
+                return null;
             },
             drawGeom() {
                 const data = require('@/assets/data/156150700.json');
@@ -440,9 +438,8 @@
             handleDateChanged() {
                 // console.log('时间轴变化')
             },
-            handleParameterSelected(parameter) {
-                // 仅在子菜单选择具体参数时切换对应图层
-                if (!['ph','phosphorus'].includes(parameter)) return;
+            handleParameterSelected(indicator) {
+                if (!indicator) return;
                 this.clearAllLayersAndLegend();
                 // 清除监测井分布勾选状态
                 if (this.$refs.waterQualityMenu) {
@@ -450,126 +447,88 @@
                 }
                 this.wellsVisible = false;
                 if (!this.mapInstance) return;
-                
-                // 调用实时API加载单项水质分布
-                if (parameter === 'ph') {
-                    this.loadSingleMetricData('pH')
-                } else if (parameter === 'phosphorus') {
-                    this.loadSingleMetricData('总磷')
-                }
+                this.loadSingleMetricData(indicator);
             },
             /**
              * 加载单项水质分布数据
              * @param {string} metricName - 指标名称 (pH, 总磷等)
              */
-            async loadSingleMetricData(metricName) {
+            async loadSingleMetricData(indicator) {
                 try {
                     this.isLoadingSampleData = true
 
-                    // 1. 先获取监测井列表
-                    if (this.wellData.length === 0) {
-                        await this.loadWellData()
-                    }
-
-                    // 2. 提取监测井编码
-                    const wellCodes = this.wellData.map(well => well.wellCode).filter(code => code)
-
-                    if (wellCodes.length === 0) {
-                        this.$message.warning('暂无监测井数据')
+                    const metricName = (indicator && (indicator.metricName || indicator.label || indicator.value)) || ''
+                    if (!metricName) {
+                        this.$message.warning('未能识别所选指标')
                         return
                     }
 
-                    // 3. 批量查询所有监测井的水质数据（使用列表接口）
-                    const results = await this.batchGetSampleData(this.queryDate)
+                    const response = await getMonitorWellSpatial({ metricName })
+                    let rawData = []
+                    if (response) {
+                        if (Array.isArray(response.data)) {
+                            rawData = response.data
+                        } else if (Array.isArray(response.rows)) {
+                            rawData = response.rows
+                        } else if (Array.isArray(response)) {
+                            rawData = response
+                        }
+                    }
 
-                    // 4. 提取指标数据
-                    const metricData = this.extractMetricData(results, metricName)
+                    if (!rawData.length) {
+                        this.$message.info('当前指标暂无监测井数据')
+                        this.renderSingleMetricLayer([])
+                        this.showSingleMetricLegend(indicator)
+                        return
+                    }
 
-                    // 5. 渲染到地图
-                    this.renderSingleMetricLayer(metricData, metricName)
+                    const metricData = this.buildMetricSpatialMapData(rawData, indicator, metricName)
+                    if (!metricData.length) {
+                        this.$message.info('当前指标暂无可展示的监测井')
+                    }
 
-                    // 6. 显示图例
-                    this.showSingleMetricLegend(metricName)
-
-
+                    this.renderSingleMetricLayer(metricData)
+                    this.showSingleMetricLegend(indicator)
                 } catch (error) {
-                    console.error(`加载${metricName}数据失败:`, error)
-                    this.$message.error(`加载${metricName}数据失败，请重试`)
+                    const indicatorName = (indicator && (indicator.label || indicator.metricName)) || '单项指标'
+                    console.error(`加载${indicatorName}数据失败:`, error)
+                    this.$message.error(`加载${indicatorName}数据失败，请重试`)
                 } finally {
                     this.isLoadingSampleData = false
                 }
             },
-            /**
-             * 提取指标数据
-             */
-            extractMetricData(results, metricName) {
-                // 指标名称映射（用于匹配接口返回的metricName）
-                const metricNameMap = {
-                    'pH': 'pH',
-                    '总磷': '总磷',
-                }
+            buildMetricSpatialMapData(rawData, indicator, metricName) {
+                const indicatorDisplayName = indicator?.label || indicator?.metricName || metricName || ''
+                const parameterKey = (indicator?.metricCode || indicator?.value || metricName || '').toString().toLowerCase()
+                const indicatorUnit = indicator?.unit || ''
+                const defaultSamplingTime = new Date().toISOString()
 
-                // 指标编码映射（用于匹配接口返回的metricCode）
-                const metricCodeMap = {
-                    'pH': 'G0005',  // pH的metricCode是G0005
-                    '总磷': 'G0012',  // 总磷暂时用G0012（硼）来替代
-                }
-
-                const targetMetricName = metricNameMap[metricName] || metricName
-                const targetMetricCode = metricCodeMap[metricName]
-                const mapData = []
-
-                // 将水质数据映射到 sampleData（类似综合水质分布）
-                const sampleDataMap = {}
-                results.forEach(result => {
-                    if (result.data) {
-                        sampleDataMap[result.data.monitoringWellCode] = result.data
-                    }
-                })
-
-                // 遍历监测井数据，只显示有对应指标数据的监测井
-                this.wellData.forEach(well => {
-                    const sampleData = sampleDataMap[well.wellCode]
-                    
-                    // 只显示有水质数据的监测井
-                    if (!sampleData) {
-                        return
+                return (rawData || []).reduce((acc, well) => {
+                    const coordinates = this.getCoordinatesFromWell(well)
+                    if (!coordinates) {
+                        return acc
                     }
 
-                    // 查找指标值：优先通过metricCode匹配，如果找不到则通过metricName匹配
-                    let metric = null
-                    if (targetMetricCode && sampleData.metrics) {
-                        metric = sampleData.metrics.find(m => m.metricCode === targetMetricCode)
-                    }
-                    
-                    // 如果通过metricCode没找到，尝试通过metricName匹配
-                    if (!metric && sampleData.metrics) {
-                        metric = sampleData.metrics.find(m => 
-                            m.metricName && m.metricName.includes(targetMetricName)
-                        )
-                    }
-
-                    if (!metric || !metric.value) {
-                        // 没有该指标数据，跳过
-                        return
-                    }
-
-                    // 根据指标值判断颜色等级
-                    const qualityLevel = this.getQualityLevelByValue(metricName, metric.value)
+                    const wellCode = well.wellCode || well.well_code
+                    const qualityLevel = this.normalizeQualityLevel(
+                        well.waterQualityLevel || well.qualityLevel || well.level || well.className
+                    )
                     const color = this.getClassColor(qualityLevel)
+                    const metricValue = well.metricValue ?? well.value ?? (well.metric && well.metric.value) ?? ''
+                    const metricUnit = well.metricUnit || well.unit || indicatorUnit
 
-                    mapData.push({
-                        coordinates: well.coordinates,
+                    acc.push({
+                        coordinates,
                         properties: {
                             popupType: 'singleItem',
-                            parameter: metricName.toLowerCase(),
-                            wellCode: well.wellCode,
-                            metricName: metricName,
-                            value: metric.value,
-                            unit: metric.unit || '',
-                            qualityLevel: qualityLevel,
-                            samplingTime: sampleData.samplingTime,
-                            color: color
+                            parameter: parameterKey,
+                            wellCode,
+                            metricName: indicatorDisplayName,
+                            value: metricValue,
+                            unit: metricUnit,
+                            qualityLevel,
+                            samplingTime: well.samplingTime || well.measureTime || well.sampleTime || defaultSamplingTime,
+                            color
                         },
                         style: {
                             shapeType: 0,
@@ -579,58 +538,22 @@
                             strokeWidth: 2
                         }
                     })
-                })
 
-                return mapData
+                    return acc
+                }, [])
             },
-            /**
-             * 根据指标值判断水质等级
-             * @param {string} metricName - 指标名称 (pH, 总磷等)
-             * @param {string|number} value - 指标值
-             * @returns {string} - 水质等级
-             */
-            getQualityLevelByValue(metricName, value) {
-                // 处理值为字符串的情况（如 "ND" 表示未检出）
-                if (typeof value === 'string' && (value.toUpperCase() === 'ND' || value.trim() === '')) {
-                    return '未知'
+            normalizeQualityLevel(level) {
+                const validLevels = ['I类', 'II类', 'III类', 'IV类', 'V类', '劣V类', '无质量等级']
+                const normalized = (level || '').trim()
+                if (validLevels.includes(normalized)) {
+                    return normalized
                 }
-
-                const numValue = parseFloat(value)
-                if (isNaN(numValue)) {
-                    return '未知'
-                }
-
-                if (metricName === 'pH') {
-                    // pH值判断：I类 (6 ≤ a ≤ 9), 劣V类 (a < 6 或 a > 9)
-                    if (numValue >= 6 && numValue <= 9) {
-                        return 'I类'
-                    } else {
-                        return '劣V类'
-                    }
-                } else if (metricName === '总磷') {
-                    // 总磷值判断（单位：mg/L）
-                    // I类 ≤ 0.02, II类 ≤ 0.10, III类 ≤ 0.20, IV类 ≤ 0.30, V类 ≤ 0.40, 劣V类 > 0.40
-                    if (numValue <= 0.02) {
-                        return 'I类'
-                    } else if (numValue <= 0.10) {
-                        return 'II类'
-                    } else if (numValue <= 0.20) {
-                        return 'III类'
-                    } else if (numValue <= 0.30) {
-                        return 'IV类'
-                    } else if (numValue <= 0.40) {
-                        return 'V类'
-                    } else {
-                        return '劣V类'
-                    }
-                }
-
-                return '未知'
+                return '无质量等级'
             },
             /**
              * 渲染单项指标图层
              */
-            renderSingleMetricLayer(mapData, metricName) {
+            renderSingleMetricLayer(mapData) {
                 // 清除现有标记
                 if (this.mapInstance && this.mapInstance.markerLayer) {
                     this.mapInstance.markerLayer.clearMarkers()
@@ -660,28 +583,15 @@
             /**
              * 显示单项指标图例
              */
-            showSingleMetricLegend(metricName) {
-                // 根据指标类型设置图例
-                if (metricName === 'pH') {
-                    this.legendTitle = 'pH'
-                    this.legendUnit = ''
-                    this.legendItems = [
-                        { label: 'I类', color: '#22a6f2', range: '(6 ≤ a ≤ 9)' },
-                        { label: '劣V类', color: '#ff2a1a', range: '(a < 6 或 a > 9)' }
-                    ]
-                } else if (metricName === '总磷') {
-                    this.legendTitle = '总磷'
-                    this.legendUnit = '单位: mg/L'
-                    this.legendItems = [
-                        { label: 'I类', color: '#22a6f2', range: '≤ 0.02' },
-                        { label: 'II类', color: '#28d6f7', range: '≤ 0.10' },
-                        { label: 'III类', color: '#b7e532', range: '≤ 0.20' },
-                        { label: 'IV类', color: '#f3d231', range: '≤ 0.30' },
-                        { label: 'V类', color: '#ff8c31', range: '≤ 0.40' },
-                        { label: '劣V类', color: '#ff2a1a', range: '> 0.40' }
-                    ]
+            showSingleMetricLegend(indicator) {
+                if (indicator && indicator.legend) {
+                    this.legendTitle = indicator.legend.title || '单项指标'
+                    this.legendUnit = indicator.legend.unit || ''
+                    this.legendItems = indicator.legend.items || []
                 } else {
                     // 通用水质等级图例
+                    this.legendTitle = '水质类别'
+                    this.legendUnit = ''
                     this.legendItems = [
                         { label: 'I类', color: '#22a6f2', range: '' },
                         { label: 'II类', color: '#28d6f7', range: '' },
@@ -689,16 +599,14 @@
                         { label: 'IV类', color: '#f3d231', range: '' },
                         { label: 'V类', color: '#ff8c31', range: '' },
                         { label: '劣V类', color: '#ff2a1a', range: '' },
-                        { label: '未知', color: '#999999', range: '' }
+                        { label: '无质量等级', color: '#999999', range: '' }
                     ]
                 }
                 this.showLegend = true
             },
             handleMenuClicked(menuType) {
                 console.log('菜单点击:', menuType)
-                // 仅四类切换：综合水质分布、PH值、总磷值、监测数据看板;
-                // 单项水质分布按钮本身不触发任何切换
-                if (!['comprehensive','ph','phosphorus','dashboard'].includes(menuType)) {
+                if (!['comprehensive','dashboard'].includes(menuType)) {
                     return;
                 }
                 // 切换前清空所有图层与图例
@@ -713,14 +621,6 @@
                     // 加载综合水质分布实时数据
                     if (!this.mapInstance) return;
                     this.loadComprehensiveWaterQuality();
-                } else if (menuType === 'ph') {
-                    // 加载pH值单项水质分布
-                    if (!this.mapInstance) return;
-                    this.loadSingleMetricData('pH');
-                } else if (menuType === 'phosphorus') {
-                    // 加载总磷值单项水质分布
-                    if (!this.mapInstance) return;
-                    this.loadSingleMetricData('总磷');
                 } else if (menuType === 'dashboard') {
                     // 显示监测数据看板
                     this.showMonitoringPanel = true;
@@ -735,6 +635,7 @@
                     case 'IV类': return '#f3d231';     // 黄
                     case 'V类': return '#ff8c31';      // 橙
                     case '劣V类': return '#ff2a1a';    // 红
+                    case '无质量等级': return '#999999';
                     default: return '#999999';
                 }
             },

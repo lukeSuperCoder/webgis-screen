@@ -6,7 +6,7 @@
         <div class="header-logo">
         </div>
         <div class="header-title">
-          呼伦贝尔市地下水环境监管系统
+          锡林郭勒盟地下水环境监管系统
         </div>
       </div>
       

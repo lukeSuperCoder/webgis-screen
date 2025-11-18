@@ -3,7 +3,7 @@
     <!-- 主菜单 -->
     <div class="menu-container">
       <!-- 水质分布空间分布 -->
-      <div class="menu-section" @mouseleave="hideSubMenu">
+      <div class="menu-section">
         <h3 class="section-title">水质分布空间分布</h3>
         <div class="menu-options">
           <div 
@@ -20,12 +20,10 @@
             class="menu-item" 
             :class="{ active: activeMenuItem === 'singleItem' }"
             @click="handleMenuClick('singleItem')"
-            @mouseenter="showSubMenu"
           >
             <div class="menu-item-content">
               <i class="el-icon-place"></i>
               <span class="menu-text">单项水质分布</span>
-              <span class="arrow" :class="{ expanded: childrenMenuVisible }">›</span>
             </div>
           </div>
           
@@ -47,7 +45,8 @@
         <h3 class="section-title">监测井点概览</h3>
         <div class="menu-options">
           <div class="checkbox-option">
-            <input 
+            <input
+              disabled 
               type="checkbox" 
               id="boundary" 
               v-model="showBoundary"
@@ -58,6 +57,7 @@
           
           <div class="checkbox-option">
             <input 
+              disabled 
               type="checkbox" 
               id="wells" 
               v-model="showWells"
@@ -68,84 +68,161 @@
         </div>
       </div>
     </div>
-    
-    <!-- 子菜单 -->
+    <!-- 指标选择卡片 -->
     <div 
-      class="submenu-container" 
-      v-if="childrenMenuVisible"
+      class="indicator-card"
+      v-if="showIndicatorCard"
       @click.stop
-      @mouseenter="showSubMenu"
-      @mouseleave="hideSubMenu"
     >
-      <div class="submenu-item" 
-           :class="{ active: selectedParameter === 'ph' }"
-           @click="selectParameter('ph')">
-        PH值
+      <div class="indicator-card-header">
+        <div class="indicator-card-title">指标选择</div>
+        <div class="indicator-card-subtitle">单项水质分布</div>
       </div>
-      <div class="submenu-item" 
-           :class="{ active: selectedParameter === 'phosphorus' }"
-           @click="selectParameter('phosphorus')">
-        总磷值
+      <div class="indicator-select-wrapper">
+        <label class="indicator-select-label" for="indicator-select">指标</label>
+        <el-select
+          id="indicator-select"
+          class="indicator-el-select"
+          v-model="selectedParameter"
+          filterable
+          remote
+          reserve-keyword
+          default-first-option
+          :popper-append-to-body="false"
+          placeholder="请选择水质指标"
+          :disabled="isLoadingIndicators || !indicatorOptions.length"
+          no-data-text="暂无可用指标"
+          @change="handleIndicatorChange"
+        >
+          <el-option
+            v-for="option in indicatorOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          >
+            <div class="indicator-option-content">
+              <span class="indicator-option-label">{{ option.label }}</span>
+              <span class="indicator-option-meta" v-if="option.metricCode">({{ option.metricCode }})</span>
+              <span class="indicator-option-unit" v-if="option.unit">{{ option.unit }}</span>
+            </div>
+          </el-option>
+        </el-select>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { getSampleMetrics } from '@/api/monitorData'
+
 export default {
   name: 'WaterQualityMenu',
   data() {
     return {
-      selectedWaterQuality: 'comprehensive',
-      childrenMenuVisible: false,
+      indicatorOptions: [],
       selectedParameter: null,
+      isLoadingIndicators: false,
+      indicatorFilterParams: {
+        filter: ''
+      },
+      indicatorSearchTimer: null,
       showBoundary: false,
       showWells: false,
-      activeMenuItem: null,
-      hideTimer: null
+      activeMenuItem: null
+    }
+  },
+  computed: {
+    showIndicatorCard() {
+      return this.activeMenuItem === 'singleItem'
+    }
+  },
+  created() {
+    this.loadIndicatorOptions()
+  },
+  beforeDestroy() {
+    if (this.indicatorSearchTimer) {
+      clearTimeout(this.indicatorSearchTimer)
+      this.indicatorSearchTimer = null
     }
   },
   methods: {
-    handleMenuClick(menuType) {
-      if (this.activeMenuItem === menuType) {
-        // 再次点击相同项，取消高亮
-        this.activeMenuItem = null;
-        if (menuType === 'singleItem') {
-          this.selectedParameter = null;
+    async loadIndicatorOptions(extraFilters = {}) {
+      this.isLoadingIndicators = true
+      try {
+        const mergedFilters = {
+          ...this.indicatorFilterParams,
+          ...extraFilters
         }
-      } else {
-        // 点击不同项，设置高亮
-        if (menuType !== 'singleItem') {
-          this.activeMenuItem = menuType; 
+        const sanitizedFilters = Object.keys(mergedFilters).reduce((acc, key) => {
+          const value = mergedFilters[key]
+          if (value !== undefined && value !== null && value !== '') {
+            acc[key] = value
+          }
+          return acc
+        }, {})
+        const response = await getSampleMetrics(sanitizedFilters)
+        if (response && (response.code === 200 || response.code === 0)) {
+          const metrics = response.data || []
+          this.indicatorOptions = metrics.map(item => ({
+            label: item.metricName || item.name || item.metricCode || item.code || '未命名指标',
+            value: item.metricCode || item.code || item.metricName,
+            metricName: item.metricName || item.name || '',
+            metricCode: item.metricCode || item.code || '',
+            unit: item.unit || item.metricUnit || ''
+          }))
+          if (this.indicatorOptions.length && !this.selectedParameter) {
+            this.selectedParameter = this.indicatorOptions[0].value
+          }
+          if (this.activeMenuItem === 'singleItem' && this.selectedParameter) {
+            this.handleIndicatorChange(this.selectedParameter)
+          }
+        } else {
+          this.$message.warning('未能获取指标列表，请稍后重试')
         }
-        // 点击综合水质分布或监测数据看板时，取消子菜单高亮
-        if (menuType === 'comprehensive' || menuType === 'dashboard') {
-          this.selectedParameter = null;
-        }
+      } catch (error) {
+        console.error('加载水质指标失败:', error)
+        this.$message.error('加载水质指标失败，请稍后重试')
+      } finally {
+        this.isLoadingIndicators = false
       }
-      this.childrenMenuVisible = false; // 关闭子菜单
+    },
+    handleMenuClick(menuType) {
+      if (menuType === 'singleItem') {
+        if (this.isLoadingIndicators) {
+          this.$message.info('正在加载指标列表，请稍候')
+          return
+        }
+        if (!this.indicatorOptions.length) {
+          this.$message.warning('暂无可用指标')
+          return
+        }
+        this.activeMenuItem = 'singleItem';
+        const defaultValue = this.selectedParameter || (this.indicatorOptions[0] && this.indicatorOptions[0].value);
+        if (defaultValue) {
+          this.handleIndicatorChange(defaultValue);
+        }
+        return;
+      }
+
+      if (this.activeMenuItem === menuType) {
+        this.activeMenuItem = null;
+      } else {
+        this.activeMenuItem = menuType;
+      }
+      // 退出单项模式时恢复默认指标
+      if (menuType !== 'singleItem' && this.indicatorOptions.length) {
+        this.selectedParameter = this.indicatorOptions[0].value;
+      }
       this.$emit('menu-clicked', menuType);
     },
-    
-    showSubMenu() {
-      if (this.hideTimer) {
-        clearTimeout(this.hideTimer);
-        this.hideTimer = null;
-      }
-      this.childrenMenuVisible = true;
-    },
-    
-    hideSubMenu() {
-      this.hideTimer = setTimeout(() => {
-        this.childrenMenuVisible = false;
-      }, 200); // 延迟200ms隐藏，给用户时间移入子菜单
-    },
-    
-    selectParameter(parameter) {
-      this.selectedParameter = parameter;
-      this.childrenMenuVisible = false;
-      this.activeMenuItem = 'singleItem'; // 单项水质分布按钮高亮
-      this.$emit('parameter-selected', parameter);
+
+    handleIndicatorChange(value) {
+      if (!value) return;
+      const indicator = this.indicatorOptions.find(item => item.value === value);
+      if (!indicator) return;
+      this.selectedParameter = value;
+      this.activeMenuItem = 'singleItem';
+      this.$emit('parameter-selected', indicator);
     },
     
     handleBoundaryChange() {
@@ -159,7 +236,8 @@ export default {
     // 清除所有高亮状态
     clearAllHighlights() {
       this.activeMenuItem = null;
-      this.selectedParameter = null;
+      this.indicatorFilterParams.filter = '';
+      this.selectedParameter = this.indicatorOptions.length ? this.indicatorOptions[0].value : null;
     },
     
     // 清除监测井分布勾选状态（不触发事件，避免清除其他按钮高亮）
@@ -169,12 +247,6 @@ export default {
         // 不触发 wells-toggle 事件，避免在 handleWellsToggle 中调用 clearAllHighlights
         // 直接通过父组件设置 wellsVisible = false 即可
       }
-    }
-  },
-  
-  beforeDestroy() {
-    if (this.hideTimer) {
-      clearTimeout(this.hideTimer);
     }
   }
 }
@@ -187,7 +259,8 @@ export default {
   left: 20px;
   z-index: 30;
   display: flex;
-  gap: 0;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .menu-container {
@@ -285,53 +358,85 @@ export default {
   font-weight: 500;
 }
 
-.arrow {
-  font-size: 16px;
-  color: #6b7280;
-  transition: transform 0.2s ease;
-}
-
-.arrow.expanded {
-  transform: rotate(90deg);
-  color: #1d4ed8;
-}
-
-.submenu-container {
+.indicator-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(156, 163, 175, 0.3);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  padding: 12px;
-  min-width: 160px;
-  z-index: 35;
-  position: absolute;
-  top: 100px;
-  left: 100%;
-  margin-left: 8px;
-  height: auto;
-  max-height: none;
-  width: auto;
+  padding: 16px;
+  min-width: 220px;
 }
 
-.submenu-item {
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.indicator-card-header {
+  margin-bottom: 12px;
+}
+
+.indicator-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.indicator-card-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.indicator-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.indicator-select-label {
+  font-size: 12px;
+  color: #4b5563;
+}
+.indicator-el-select {
+  width: 100%;
+}
+
+.indicator-el-select :deep(.el-input__inner) {
   font-size: 13px;
-  color: #374151;
-  user-select: none;
+  border-radius: 6px;
+  border-color: rgba(156, 163, 175, 0.4);
+  background-color: rgba(249, 250, 251, 0.8);
+  color: #1f2937;
 }
 
-.submenu-item:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+.indicator-el-select :deep(.el-input__inner:focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
-.submenu-item.active {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #1d4ed8;
+.indicator-option-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1f2937;
+}
+
+.indicator-option-label {
   font-weight: 500;
+}
+
+.indicator-option-meta {
+  color: #6b7280;
+}
+
+.indicator-option-unit {
+  color: #3b82f6;
+  font-size: 12px;
+}
+
+.indicator-select-wrapper :deep(.el-select-dropdown) {
+  width: 100% !important;
+  min-width: 100% !important;
+  box-sizing: border-box;
 }
 
 /* 响应式设计 */
@@ -339,6 +444,7 @@ export default {
   .water-quality-menu {
     top: 10px;
     left: 10px;
+    flex-direction: column;
   }
   
   .menu-container {
@@ -346,9 +452,8 @@ export default {
     padding: 12px;
   }
   
-  .submenu-container {
-    min-width: 140px;
-    padding: 8px;
+  .indicator-card {
+    width: 100%;
   }
 }
 </style>
