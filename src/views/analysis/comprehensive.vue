@@ -1,605 +1,321 @@
 <template>
   <div class="comprehensive-analysis">
-    <!-- 查询条件 -->
-    <el-card class="query-card">
+    <!-- 搜索条件 -->
+    <el-card class="search-card">
       <el-form
-        ref="queryFormRef"
-        :model="queryForm"
         :inline="true"
-        class="query-form"
+        :model="filters"
+        class="search-form"
+        label-width="90px"
       >
-        <el-form-item label="监测井选择">
+        <el-form-item label="监测井选择:">
           <el-select
-            v-model="queryForm.wellCode"
+            v-model="filters.well"
             placeholder="请选择监测井"
             clearable
             filterable
+            style="width: 220px;"
+            popper-append-to-body
           >
             <el-option
-              v-for="code in wellCodeOptions"
-              :key="code"
-              :label="code"
-              :value="code"
-            ></el-option>
+              v-for="well in wellList"
+              :key="well"
+              :label="well"
+              :value="well"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="时间范围">
+        <el-form-item label="时间范围:">
           <el-date-picker
-            v-model="queryForm.timeRange"
-            type="datetimerange"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            v-model="dateRange"
+            type="daterange"
             range-separator="至"
-            value-format="yyyy-MM-dd HH:mm:ss"
-            :default-time="['00:00:00', '23:59:59']"
-            align="right"
-            clearable
-          ></el-date-picker>
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="yyyy-MM-dd"
+            style="width: 280px;"
+            @change="handleDateRangeChange"
+          />
         </el-form-item>
-        <el-form-item class="query-actions">
-          <el-button type="primary" @click="queryData">查询</el-button>
-          <el-button @click="resetQuery">重置</el-button>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <!-- 子标签页 -->
-    <el-tabs v-model="activeTab" class="analysis-tabs">
-      <el-tab-pane name="evaluation">
-        <span slot="label" class="tab-label">
-          <i class="el-icon-star-on"></i>
-          <span>评价结果</span>
-        </span>
-      </el-tab-pane>
-      <el-tab-pane name="chart">
-        <span slot="label" class="tab-label">
-          <i class="el-icon-data-line"></i>
-          <span>报图</span>
-        </span>
-      </el-tab-pane>
-    </el-tabs>
-
     <!-- 数据表格 -->
-    <el-card v-show="activeTab === 'evaluation'" class="table-card">
-      <div class="table-content">
-        <el-table
-          v-if="tableVisible"
-          :data="monitoringData"
-          style="width: 100%"
-          :loading="loading"
-          border
-          stripe
-          @selection-change="handleSelectionChange"
-        >
-          <el-table-column
-            type="selection"
-            width="55"
-            align="center"
-          ></el-table-column>
-          <el-table-column
-            type="index"
-            label="序号"
-            width="60"
-            align="center"
-          ></el-table-column>
-          <el-table-column
-            prop="monitoringWellCode"
-            label="监测井编号"
-            width="140"
-            show-overflow-tooltip
-          ></el-table-column>
-          <el-table-column
-            prop="samplingTime"
-            label="采样时间"
-            width="170"
-            show-overflow-tooltip
-          ></el-table-column>
-          <el-table-column
-            v-for="metricName in dynamicMetricColumns"
-            :key="metricName"
-            :prop="metricName"
-            :label="metricName"
-            min-width="120"
-            align="center"
-            show-overflow-tooltip
-          >
-            <template slot-scope="{ row }">
-              <span>{{ row[metricName] || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="qualityLevel"
-            label="水质类别"
-            width="120"
-            align="center"
-            fixed="right"
-          ></el-table-column>
-        </el-table>
-        <div v-else class="table-placeholder">
-          <el-empty description="请先选择条件并查询评价结果"></el-empty>
+    <el-card class="table-card">
+      <div class="table-header">
+        <div>
+          <h3>监测井监测数据</h3>
+          
         </div>
-        <transition name="fade">
-          <div
-            v-if="showEvaluationLoading"
-            class="evaluation-loading-overlay"
-          >
-            <div class="evaluation-loading">
-              <el-progress
-                :percentage="evaluationProgress"
-                :stroke-width="18"
-                :text-inside="true"
-              ></el-progress>
-              <p class="loading-text">评价结果计算中，请稍后…</p>
-            </div>
-          </div>
-        </transition>
+        <span class="table-desc">共 {{ tableData.length }} 条</span>
       </div>
-    </el-card>
 
-    <!-- 报图 -->
-    <el-card v-show="activeTab === 'chart'" class="chart-card">
-      <div class="chart-controls">
-        <div class="control-label">指标选择</div>
-        <el-select
-          v-model="selectedMetric"
-          placeholder="请选择指标"
-          size="small"
-          @change="handleMetricChange"
+      <el-table
+        :data="tableData"
+        style="width: 100%"
+        :loading="loading"
+        stripe
+        border
+        height="calc(100vh - 320px)"
+      >
+        <el-table-column type="index" label="序号" width="60" align="center" />
+        <el-table-column
+          prop="monitoringWellCode"
+          label="监测井编号"
+          align="center"
+          min-width="140"
+        />
+        <el-table-column
+          prop="samplingTime"
+          label="监测时间"
+          align="center"
+          min-width="180"
         >
-          <el-option
-            v-for="option in chartMetricOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-          ></el-option>
-        </el-select>
-      </div>
-      <div class="chart-body">
-        <div ref="reportChart" class="report-chart"></div>
-        <div v-if="!hasChartData && !showEvaluationLoading" class="chart-empty">
-          <el-empty description="暂无可展示的数据"></el-empty>
-        </div>
-        <transition name="fade">
-          <div
-            v-if="showEvaluationLoading"
-            class="evaluation-loading-overlay"
-          >
-            <div class="evaluation-loading">
-              <el-progress
-                :percentage="evaluationProgress"
-                :stroke-width="18"
-                :text-inside="true"
-              ></el-progress>
-              <p class="loading-text">评价结果计算中，请稍后…</p>
-            </div>
-          </div>
-        </transition>
-      </div>
+          <template slot-scope="scope">
+            {{ formatDateTime(scope.row.samplingTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          v-for="metric in metricColumns"
+          :key="metric.key"
+          :prop="metric.key"
+          :label="metric.label"
+          align="center"
+          min-width="120"
+        >
+          <template slot-scope="scope">
+            <span
+              :style="{
+                color: getLevelColor(
+                  scope.row.metrics &&
+                  scope.row.metrics[metric.key]
+                    ? scope.row.metrics[metric.key].level
+                    : ''
+                )
+              }"
+            >
+              {{
+                scope.row.metrics && scope.row.metrics[metric.key]
+                  ? scope.row.metrics[metric.key].value
+                  : '--'
+              }}
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
   </div>
 </template>
 
 <script>
-import { getMonitorWellCodes } from '@/api/monitorWell'
 import { getSampleQualityLevels } from '@/api/monitorData'
+import { getMonitorWellCodes } from '@/api/monitorWell'
 
 export default {
   name: 'ComprehensiveAnalysis',
-  created() {
-    this.loadWellCodes()
-  },
-  mounted() {
-    window.addEventListener('resize', this.handleChartResize)
-  },
-  beforeDestroy() {
-    this.clearEvaluationTimers()
-    window.removeEventListener('resize', this.handleChartResize)
-    this.disposeChart()
-  },
   data() {
     return {
-      loading: false,
-      activeTab: 'evaluation',
-      queryForm: {
-        wellCode: '',
-        timeRange: []
+      filters: {
+        well: '',
+        startDate: '',
+        endDate: ''
       },
-      lastQueryParams: null,
-      wellCodeOptions: [],
-      monitoringData: [],
-      dynamicMetricColumns: [],
-      selectedRows: [],
-      tableVisible: false,
-      showEvaluationLoading: false,
-      evaluationProgress: 0,
-      pendingTableData: [],
-      pendingMetricColumns: [],
-      dataReady: false,
-      evaluationDelayDone: false,
-      progressTimer: null,
-      displayTimer: null,
-      chartMetricOptions: [
-        { label: '水质类别', value: 'qualityLevel' }
-      ],
-      selectedMetric: 'qualityLevel',
-      rawQualityRecords: [],
-      chartInstance: null,
-      hasChartData: false
+      dateRange: [],
+      wellList: [],
+      loading: false,
+      tableData: [],
+      metricColumns: [],
+      metricNameKeyMap: {}
     }
   },
-  watch: {
-    activeTab(newValue) {
-      if (newValue === 'chart') {
-        this.refreshChart(true)
-      }
-    }
+  mounted() {
+    this.initFilters()
+    this.loadWellList()
+    this.loadDataList()
   },
   methods: {
-    async loadWellCodes() {
-      try {
-        const response = await getMonitorWellCodes()
-        if (response && response.code === 200) {
-          const data = response.data
-          if (Array.isArray(data)) {
-            this.wellCodeOptions = data
-          } else if (data && Array.isArray(data.data)) {
-            this.wellCodeOptions = data.data
-          } else {
-            this.wellCodeOptions = []
-          }
-        } else {
-          this.wellCodeOptions = []
-        }
-      } catch (error) {
-        console.error('获取监测井编号失败', error)
-        this.wellCodeOptions = []
-        this.$message.error('监测井编号获取失败')
+    initFilters() {
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 2000)
+
+      this.filters.startDate = this.formatDateForInput(startDate)
+      this.filters.endDate = this.formatDateForInput(endDate)
+      this.dateRange = [this.filters.startDate, this.filters.endDate]
+    },
+    handleQuery() {
+      this.loadDataList()
+    },
+    handleReset() {
+      this.filters = {
+        well: '',
+        startDate: '',
+        endDate: ''
+      }
+      this.dateRange = []
+      this.initFilters()
+      this.loadDataList()
+    },
+    handleDateRangeChange(value) {
+      if (value && value.length === 2) {
+        this.filters.startDate = value[0]
+        this.filters.endDate = value[1]
+      } else {
+        this.filters.startDate = ''
+        this.filters.endDate = ''
       }
     },
-    async queryData() {
-      if (!this.queryForm.wellCode) {
-        this.$message.warning('请选择监测井')
-        return
-      }
-      this.activeTab = 'evaluation'
-      this.loading = true
-      this.prepareEvaluationPhase()
-      const [startTime, endTime] = this.queryForm.timeRange || []
-      this.lastQueryParams = {
-        wellCode: this.queryForm.wellCode || '',
-        startTime: startTime || '',
-        endTime: endTime || ''
-      }
-      const params = {
-        monitoringWellCode: this.queryForm.wellCode,
-        startTime: startTime || undefined,
-        endTime: endTime || undefined
-      }
+    formatDateForInput(date) {
+      if (!date) return ''
+      const d = new Date(date)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    },
+    formatDateTime(dateTime) {
+      if (!dateTime) return '未知'
       try {
-        const res = await getSampleQualityLevels(params)
-        if (res && res.code === 200) {
-          const records = Array.isArray(res.data) ? res.data : []
-          const { rows, metricNames } = this.processQualityLevelData(records)
-          this.pendingTableData = rows
-          this.pendingMetricColumns = metricNames
-          this.rawQualityRecords = records
-          this.chartMetricOptions = this.buildMetricOptions(metricNames)
-          this.selectedMetric = 'qualityLevel'
-          this.hasChartData = false
-          this.dataReady = true
-          this.tryShowEvaluationResult()
-        } else {
-          this.handleQueryFailure(res?.msg || '查询失败')
+        const date = new Date(dateTime)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        const seconds = String(date.getSeconds()).padStart(2, '0')
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+      } catch (error) {
+        return dateTime
+      }
+    },
+    formatDateTimeForApi(date) {
+      if (!date) return ''
+      const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : new Date(date)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    },
+    async loadWellList() {
+      try {
+        const response = await getMonitorWellCodes()
+        if (response.code === 200) {
+          if (Array.isArray(response.data)) {
+            this.wellList = response.data
+          } else if (response.data && Array.isArray(response.data.data)) {
+            this.wellList = response.data.data
+          } else {
+            this.wellList = []
+          }
         }
       } catch (error) {
-        console.error('查询评价结果失败', error)
-        this.handleQueryFailure('查询失败，请稍后重试')
+        console.error('获取监测井列表失败:', error)
+        this.wellList = []
+      }
+    },
+    async loadDataList() {
+      this.loading = true
+      try {
+        const params = {
+          monitoringWellCode: this.filters.well || ''
+        }
+
+        if (this.filters.startDate) {
+          params.startTime = this.formatDateTimeForApi(this.filters.startDate)
+        }
+        if (this.filters.endDate) {
+          const endDate = new Date(this.filters.endDate + 'T23:59:59')
+          params.endTime = this.formatDateTimeForApi(endDate)
+        }
+
+        const response = await getSampleQualityLevels(params)
+
+        if (response.code === 200 && Array.isArray(response.data)) {
+          const records = response.data || []
+          this.buildMetricColumns(records)
+          this.tableData = records.map(item => {
+            const metricsMap = {}
+            if (item.metricValues && Array.isArray(item.metricValues)) {
+              item.metricValues.forEach(metric => {
+                const key = this.getMetricKeyByName(metric.metricName)
+                metricsMap[key] = {
+                  value: metric.value,
+                  level: metric.level || metric.qualityLevel || ''
+                }
+              })
+            }
+            return {
+              monitoringWellCode: item.monitoringWellCode || '未知',
+              samplingTime: item.samplingTime,
+              metrics: metricsMap
+            }
+          })
+        } else {
+          this.tableData = []
+        }
+      } catch (error) {
+        console.error('获取监测数据列表失败:', error)
+        this.$message.error('获取监测数据列表失败')
+        this.tableData = []
       } finally {
         this.loading = false
       }
     },
-    resetQuery() {
-      if (this.$refs.queryFormRef) {
-        this.$refs.queryFormRef.resetFields()
-      } else {
-        this.queryForm = {
-          wellCode: '',
-          timeRange: []
-        }
-      }
-      this.clearEvaluationTimers()
-      this.monitoringData = []
-      this.dynamicMetricColumns = []
-      this.pendingTableData = []
-      this.pendingMetricColumns = []
-      this.showEvaluationLoading = false
-      this.tableVisible = false
-      this.evaluationProgress = 0
-      this.dataReady = false
-      this.evaluationDelayDone = false
-      this.lastQueryParams = null
-      this.resetChartState()
-    },
-    processQualityLevelData(records = []) {
-      const rows = []
+    buildMetricColumns(records) {
       const metricNameSet = new Set()
+      const nameKeyMap = {}
+      const nameLabelMap = {}
+
       records.forEach(item => {
-        const {
-          monitoringWellCode = '',
-          samplingTime = '',
-          qualityLevel = '',
-          metricValues = []
-        } = item || {}
-        const row = {
-          monitoringWellCode,
-          samplingTime,
-          qualityLevel
-        }
-        if (Array.isArray(metricValues)) {
-          metricValues.forEach(metric => {
-            const metricName = metric.metricName || metric.metricCode || ''
-            if (metricName) {
-              metricNameSet.add(metricName)
-              row[metricName] = metric.level || '-'
+        if (item.metricValues && Array.isArray(item.metricValues)) {
+          item.metricValues.forEach(metric => {
+            if (metric.metricName) {
+              const name = metric.metricName
+              const unit = metric.unit
+              const label = unit && unit !== '/' ? `${name}(${unit})` : name
+              metricNameSet.add(name)
+              if (!nameKeyMap[name]) {
+                const key = 'm_' + name.replace(/\s+/g, '').replace(/[()（）/%]/g, '_')
+                nameKeyMap[name] = key
+                nameLabelMap[name] = label
+              }
             }
           })
         }
-        rows.push(row)
       })
-      return {
-        rows,
-        metricNames: Array.from(metricNameSet)
-      }
-    },
-    handleSelectionChange(selection) {
-      this.selectedRows = selection
-    },
-    prepareEvaluationPhase() {
-      this.clearEvaluationTimers()
-      this.tableVisible = false
-      this.showEvaluationLoading = true
-      this.evaluationProgress = 5
-      this.pendingTableData = []
-      this.pendingMetricColumns = []
-      this.dataReady = false
-      this.evaluationDelayDone = false
-      const delayMs = this.getRandomDelay()
-      this.startEvaluationProgress(delayMs)
-    },
-    getRandomDelay() {
-      const seconds = Math.floor(Math.random() * 8) + 3
-      return seconds * 1000
-    },
-    startEvaluationProgress(delayMs) {
-      const start = Date.now()
-      this.progressTimer = setInterval(() => {
-        const elapsed = Date.now() - start
-        const percent = Math.min(95, Math.floor((elapsed / delayMs) * 100))
-        if (!this.showEvaluationLoading) {
-          clearInterval(this.progressTimer)
-          this.progressTimer = null
-          return
-        }
-        this.evaluationProgress = percent
-      }, 300)
-      this.displayTimer = setTimeout(() => {
-        this.evaluationDelayDone = true
-        this.evaluationProgress = Math.max(this.evaluationProgress, 98)
-        this.tryShowEvaluationResult()
-      }, delayMs)
-    },
-    tryShowEvaluationResult() {
-      if (this.dataReady && this.evaluationDelayDone) {
-        this.monitoringData = this.pendingTableData
-        this.dynamicMetricColumns = this.pendingMetricColumns
-        this.chartMetricOptions = this.buildMetricOptions(
-          this.dynamicMetricColumns
-        )
-        this.selectedMetric = 'qualityLevel'
-        this.hasChartData = false
-        this.tableVisible = true
-        this.showEvaluationLoading = false
-        this.evaluationProgress = 100
-        this.$nextTick(() => {
-          if (this.activeTab === 'chart') {
-            this.refreshChart(true)
-          }
-          this.$message.success('查询完成')
-        })
-        this.clearEvaluationTimers()
-      }
-    },
-    handleQueryFailure(message) {
-      this.pendingTableData = []
-      this.pendingMetricColumns = []
-      this.monitoringData = []
-      this.dynamicMetricColumns = []
-      this.showEvaluationLoading = false
-      this.tableVisible = false
-      this.evaluationProgress = 0
-      this.dataReady = false
-      this.evaluationDelayDone = false
-      this.resetChartState()
-      this.clearEvaluationTimers()
-      if (message) {
-        this.$message.error(message)
-      }
-    },
-    clearEvaluationTimers() {
-      if (this.progressTimer) {
-        clearInterval(this.progressTimer)
-        this.progressTimer = null
-      }
-      if (this.displayTimer) {
-        clearTimeout(this.displayTimer)
-        this.displayTimer = null
-      }
-    },
-    buildMetricOptions(metricNames = []) {
-      const options = []
-      if (this.hasValidQualityLevel()) {
-        options.push({ label: '水质类别', value: 'qualityLevel' })
-      }
-      if (Array.isArray(metricNames)) {
-        metricNames.forEach(name => {
-          if (!name) return
-          if (this.hasValidMetricLevel(name)) {
-            options.push({
-              label: name,
-              value: name
-            })
-          }
-        })
-      }
-      return options
-    },
-    hasValidQualityLevel() {
-      if (!Array.isArray(this.rawQualityRecords)) {
-        return false
-      }
-      return this.rawQualityRecords.some(record =>
-        this.isValidLevel(record?.qualityLevel)
-      )
-    },
-    hasValidMetricLevel(metricName) {
-      if (!metricName || !Array.isArray(this.rawQualityRecords)) {
-        return false
-      }
-      return this.rawQualityRecords.some(record => {
-        const metrics = Array.isArray(record?.metricValues)
-          ? record.metricValues
-          : []
-        const targetMetric = metrics.find(metric => {
-          const name = metric.metricName || metric.metricCode
-          return name === metricName
-        })
-        return targetMetric && this.isValidLevel(targetMetric.level)
-      })
-    },
-    handleMetricChange() {
-      this.refreshChart(true)
-    },
-    refreshChart(force = false) {
-      if (!force && this.activeTab !== 'chart') {
-        return
-      }
-      this.$nextTick(() => {
-        if (!this.$refs.reportChart) {
-          return
-        }
-        if (!this.chartInstance) {
-          this.chartInstance = this.$echarts.init(this.$refs.reportChart)
-        }
-        const segments = this.getChartSegments(this.selectedMetric)
-        if (!segments.length) {
-          this.hasChartData = false
-          if (this.chartInstance) {
-            this.chartInstance.clear()
-          }
-          return
-        }
-        this.hasChartData = true
-        const option = this.buildChartOption(segments)
-        this.chartInstance.setOption(option)
-      })
-    },
-    getChartSegments(metricKey) {
-      if (!this.rawQualityRecords.length) {
-        return []
-      }
-      const counter = {}
-      this.rawQualityRecords.forEach(record => {
-        if (!record) return
-        if (metricKey === 'qualityLevel') {
-          const level = record.qualityLevel
-          if (this.isValidLevel(level)) {
-            counter[level] = (counter[level] || 0) + 1
-          }
-          return
-        }
-        const metrics = Array.isArray(record.metricValues)
-          ? record.metricValues
-          : []
-        const targetMetric = metrics.find(metric => {
-          const metricName = metric.metricName || metric.metricCode
-          return metricName === metricKey
-        })
-        if (targetMetric && this.isValidLevel(targetMetric.level)) {
-          const level = targetMetric.level
-          counter[level] = (counter[level] || 0) + 1
-        }
-      })
-      return Object.keys(counter).map(level => ({
-        name: level,
-        value: counter[level]
+
+      this.metricColumns = Array.from(metricNameSet).map(name => ({
+        key: nameKeyMap[name],
+        label: nameLabelMap[name] || name
       }))
+      this.metricNameKeyMap = nameKeyMap
     },
-    isValidLevel(level) {
-      if (!level) return false
-      return level !== '无质量等级' && level !== '-'
-    },
-    buildChartOption(data) {
-      const total = data.reduce((sum, item) => sum + item.value, 0)
-      return {
-        tooltip: {
-          trigger: 'item',
-          formatter: params => {
-            const percent = total
-              ? ((params.value / total) * 100).toFixed(1)
-              : 0
-            return `${params.name}：${params.value} (${percent}%)`
-          }
-        },
-        legend: {
-          orient: 'vertical',
-          right: 100,
-          top: 'center',
-          icon: 'circle'
-        },
-        series: [
-          {
-            name: '质量等级',
-            type: 'pie',
-            radius: ['35%', '65%'],
-            center: ['35%', '50%'],
-            avoidLabelOverlap: true,
-            itemStyle: {
-              borderRadius: 6,
-              borderColor: '#fff',
-              borderWidth: 2
-            },
-            label: {
-              formatter: '{b}\n{d}%',
-              fontSize: 12
-            },
-            labelLine: {
-              length: 15,
-              length2: 8
-            },
-            data
-          }
-        ]
+    getMetricKeyByName(metricName) {
+      if (!metricName) return ''
+      if (this.metricNameKeyMap[metricName]) {
+        return this.metricNameKeyMap[metricName]
       }
+      const key = 'm_' + metricName.replace(/\s+/g, '').replace(/[()（）/%]/g, '_')
+      this.$set(this.metricNameKeyMap, metricName, key)
+      return key
     },
-    handleChartResize() {
-      if (this.chartInstance) {
-        this.chartInstance.resize()
-      }
-    },
-    disposeChart() {
-      if (this.chartInstance) {
-        this.chartInstance.dispose()
-        this.chartInstance = null
-      }
-    },
-    resetChartState() {
-      this.rawQualityRecords = []
-      this.chartMetricOptions = [{ label: '水质类别', value: 'qualityLevel' }]
-      this.selectedMetric = 'qualityLevel'
-      this.hasChartData = false
-      if (this.chartInstance) {
-        this.chartInstance.clear()
-      }
+    getLevelColor(level) {
+      if (!level) return ''
+      const text = String(level)
+      if (text.includes('Ⅰ类')) return '#00E400'
+      if (text.includes('Ⅱ类')) return '#00B0F0'
+      if (text.includes('Ⅲ类')) return '#FFFF00'
+      if (text.includes('Ⅳ类')) return '#FFC000'
+      if (text.includes('Ⅴ类')) return '#FF0000'
+      if (text.includes('劣Ⅴ类')) return '#800080'
+      return ''
     }
   }
 }
@@ -608,130 +324,47 @@ export default {
 <style scoped>
 .comprehensive-analysis {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.query-card {
-  margin-bottom: 20px;
+.search-card {
+  padding-bottom: 0;
 }
 
-.query-form {
-  margin-bottom: 0;
-}
-
-.export-buttons {
-  margin-bottom: 20px;
-}
-
-.export-buttons .el-button {
-  margin-right: 10px;
-}
-
-.analysis-tabs {
-  margin-bottom: 20px;
-}
-
-.tab-label {
-  display: inline-flex;
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
 }
 
-.tab-label i {
-  font-size: 16px;
-}
-
-.query-actions .el-button + .el-button {
-  margin-left: 10px;
+.search-form .el-form-item {
+  margin-right: 16px;
+  margin-bottom: 12px;
 }
 
 .table-card {
   flex: 1;
 }
 
-.chart-card {
-  margin-top: 20px;
-}
-
-.table-content {
-  position: relative;
-  min-height: 260px;
-}
-
-.evaluation-loading-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 1);
+.table-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  padding: 0 24px;
-  box-sizing: border-box;
-  z-index: 5;
-}
-
-.evaluation-loading {
-  width: 100%;
-  max-width: 640px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.evaluation-loading .el-progress {
-  width: 100%;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.loading-text {
-  color: #606266;
-  font-size: 14px;
-}
-
-.table-placeholder {
-  padding: 60px 0;
-}
-
-.chart-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 16px;
 }
 
-.control-label {
-  font-size: 14px;
-  color: #606266;
+.table-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #303133;
 }
 
-.chart-body {
-  position: relative;
-  width: 100%;
-  min-height: 320px;
+
+.table-desc {
+  color: #909399;
+  font-size: 13px;
 }
 
-.report-chart {
-  width: 60%;
-  height: 360px;
-}
-
-.chart-empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-}
 </style>

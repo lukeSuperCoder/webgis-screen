@@ -105,6 +105,12 @@ const routes = [
             name: 'DataProjectConfig',
             component: () => import('../views/data-manage/project-config.vue'),
             meta: { requiresAuth: true }
+          },
+          {
+            path: 'pollution-metric',
+            name: 'DataPollutionMetric',
+            component: () => import('../views/data-manage/pollution-metric.vue'),
+            meta: { requiresAuth: true }
           }
         ]
       },
@@ -125,12 +131,6 @@ const routes = [
             path: 'site-management',
             name: 'SystemSiteManagement',
             component: () => import('../views/system-manage/site-management.vue'),
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'project-management',
-            name: 'SystemProjectManagement',
-            component: () => import('../views/system-manage/project-management.vue'),
             meta: { requiresAuth: true }
           }
         ]

@@ -21,6 +21,12 @@ export * from './monitorWell'
 // 监测数据管理
 export * from './monitorData'
 
+// 评价标准管理
+export * from './evaluation'
+
+// 质控规则管理
+export * from './qualityRule'
+
 // 日志管理
 export * from './monitorLog'
 
@@ -29,6 +35,9 @@ export * from './project'
 
 // 水源地信息管理
 export * from './waterSource'
+
+// 污染物指标管理
+export * from './pollutionMetric'
 
 // 请求实例
 export { default as request } from './request'

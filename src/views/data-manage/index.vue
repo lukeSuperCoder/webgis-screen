@@ -42,6 +42,11 @@ export default {
           key: '/data/project-config',
           title: '监测项目数据管理',
           icon: 'el-icon-setting'
+        },
+        {
+          key: '/data/pollution-metric',
+          title: '检测项目配置',
+          icon: 'el-icon-magic-stick'
         }
       ]
     }
@@ -53,7 +58,8 @@ export default {
         '/data/well-management': '监测井数据管理',
         '/data/water-source-management': '水源地数据管理',
         '/data/monitoring-data': '监测数据管理',
-        '/data/project-config': '监测项目数据管理'
+        '/data/project-config': '监测项目数据管理',
+        '/data/pollution-metric': '检测项目配置'
       }
       return routeMap[this.$route.path] || '数据管理'
     },
@@ -63,7 +69,8 @@ export default {
         '/data/well-management': '管理监测井基础信息',
         '/data/water-source-management': '管理水源地基础信息及边界',
         '/data/monitoring-data': '录入、查询和管理监测数据',
-        '/data/project-config': '配置监测项目参数'
+        '/data/project-config': '配置监测项目参数',
+        '/data/pollution-metric': '配置污染物指标及导入导出'
       }
       return descMap[this.$route.path] || '数据管理功能'
     }

@@ -27,6 +27,11 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   response => {
+    // 特殊处理文件流响应（如导入/导出文件），直接返回原始数据
+    if (response.config && response.config.responseType === 'blob') {
+      return response.data
+    }
+
     const res = response.data
     // 根据OpenAPI定义的响应格式处理
     if (res.code !== 200 && res.code !== 0) {
