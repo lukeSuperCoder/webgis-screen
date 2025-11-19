@@ -249,7 +249,6 @@ export default {
           }
         } catch (error) {
           console.error('保存指标失败:', error)
-          this.$message.error('保存失败，请稍后重试')
         }
       })
     },

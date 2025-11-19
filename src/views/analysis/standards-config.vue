@@ -684,7 +684,6 @@ export default {
           }
         } catch (error) {
           console.error('保存评价标准配置失败:', error)
-          this.$message.error('保存失败，请稍后重试')
         } finally {
           this.submitLoading = false
         }

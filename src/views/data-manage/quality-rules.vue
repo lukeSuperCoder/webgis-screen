@@ -481,7 +481,6 @@ export default {
           }
         } catch (error) {
           console.error('保存质控规则失败:', error)
-          this.$message.error('保存失败，请稍后重试')
         } finally {
           this.saveLoading = false
         }
