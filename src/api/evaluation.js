@@ -123,11 +123,8 @@ export function getEvaluationViewList(params) {
  */
 export function downloadEvaluationStandard(id) {
   return request({
-    url: '/evaluation/view/download',
+    url: `/evaluation/view/download/${id}`,
     method: 'get',
-    params: {
-      id
-    },
     responseType: 'blob'
   })
 }

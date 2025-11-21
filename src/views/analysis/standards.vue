@@ -55,59 +55,13 @@
           show-overflow-tooltip
         />
         <el-table-column
-          prop="planName"
-          label="评价方案名称"
-          min-width="220"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="standardNature"
-          label="标准性质"
-          width="120"
-          align="center"
-        >
-          <template slot-scope="scope">
-            {{ scope.row.standardNature || '--' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="type"
-          label="类型"
-          width="140"
-          align="center"
-        >
-          <template slot-scope="scope">
-            {{ formatType(scope.row) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="executionDate"
-          label="执行日期"
-          width="160"
-          align="center"
-        >
-          <template slot-scope="scope">
-            {{ formatDate(scope.row.executionDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column
           prop="createTime"
           label="上传时间"
-          width="180"
+          width="280"
           align="center"
         >
           <template slot-scope="scope">
             {{ formatDateTime(scope.row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="filePath"
-          label="文件名"
-          min-width="200"
-          show-overflow-tooltip
-        >
-          <template slot-scope="scope">
-            {{ getFileName(scope.row) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" align="center" fixed="right">
@@ -170,12 +124,12 @@
               ref="fileInputRef"
               type="file"
               class="hidden-file-input"
-              accept=".xls,.xlsx,.doc,.docx,.pdf"
+              accept=".doc,.docx,.pdf"
               @change="handleFileChange"
             />
           </div>
           <p class="upload-tip">
-            支持 .xls、.xlsx、.doc、.docx、.pdf，单个文件不超过 10 MB。
+            支持 .doc、.docx、.pdf，单个文件不超过 10 MB。
           </p>
         </el-form-item>
       </el-form>
@@ -328,7 +282,7 @@ export default {
     },
     formatDateTime(dateStr) {
       if (!dateStr) return '--'
-      return dateStr.replace('T', ' ')
+      return dateStr.replace('T', ' ').slice(0, 19)
     },
     getFileName(row) {
       if (!row) return '--'
@@ -359,18 +313,16 @@ export default {
       const file = event.target.files && event.target.files[0]
       if (!file) return
       const allowTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       ]
       const isAllowed =
         allowTypes.includes(file.type) ||
-        /\.xls$|\.xlsx$|\.pdf$|\.doc$|\.docx$/i.test(file.name)
+        /\.pdf$|\.doc$|\.docx$/i.test(file.name)
       const isLt10M = file.size / 1024 / 1024 <= 10
       if (!isAllowed) {
-        this.$message.error('仅支持 Excel、Word 或 PDF 文件')
+        this.$message.error('仅支持 Word 或 PDF 文件')
         event.target.value = ''
         return
       }
