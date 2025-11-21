@@ -147,3 +147,16 @@ export function importEvaluationStandard(formData) {
   })
 }
 
+/**
+ * 预览评价标准文件（返回文件流，用于创建 blob URL）
+ * @param {number|string} id 评价标准ID
+ * @returns {Promise<Blob>} 文件流
+ */
+export function previewEvaluationStandard(id) {
+  return request({
+    url: `/evaluation/view/preview/${id}`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+

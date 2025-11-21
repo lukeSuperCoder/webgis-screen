@@ -726,7 +726,7 @@
         ]
       }
     },
-    "/evaluation/view/download": {
+    "/evaluation/view/download/{id}": {
       "get": {
         "tags": [
           "评价标准文件管理"
@@ -736,10 +736,10 @@
         "parameters": [
           {
             "name": "id",
-            "in": "query",
+            "in": "path",
             "description": "评价标准ID",
             "required": true,
-            "style": "form",
+            "style": "simple",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -911,6 +911,49 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "Authorization": [
+              "global"
+            ]
+          }
+        ]
+      }
+    },
+    "/evaluation/view/preview/{id}": {
+      "get": {
+        "tags": [
+          "评价标准文件管理"
+        ],
+        "summary": "预览评价标准文件",
+        "operationId": "previewEvaluationStandardUsingGET",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "评价标准ID",
+            "required": true,
+            "style": "simple",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           },
           "401": {
             "description": "Unauthorized"
@@ -2412,6 +2455,28 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "description": "pageNum",
+            "required": false,
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize",
+            "required": false,
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -3308,6 +3373,28 @@
             "schema": {
               "type": "number",
               "format": "bigdecimal"
+            }
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "description": "pageNum",
+            "required": false,
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize",
+            "required": false,
+            "style": "form",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],

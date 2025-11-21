@@ -37,12 +37,6 @@
           <el-button type="primary" icon="el-icon-upload2" @click="openImportDialog">
             导入文件
           </el-button>
-          <el-button icon="el-icon-refresh" :loading="loading" @click="loadStandardList">
-            刷新
-          </el-button>
-        </div>
-        <div class="toolbar-right">
-          <span class="result-count">共 {{ total }} 条标准文件</span>
         </div>
       </div>
 
@@ -116,8 +110,16 @@
             {{ getFileName(scope.row) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" align="center" fixed="right">
+        <el-table-column label="操作" width="200" align="center" fixed="right">
           <template slot-scope="scope">
+            <el-button
+              type="text"
+              size="mini"
+              icon="el-icon-view"
+              @click="handlePreview(scope.row)"
+            >
+              预览
+            </el-button>
             <el-button
               type="text"
               size="mini"
@@ -184,6 +186,41 @@
         </el-button>
       </div>
     </el-dialog>
+
+    <!-- 文件预览弹窗 -->
+    <el-dialog
+      title="文件预览"
+      :visible.sync="previewDialogVisible"
+      width="90%"
+      top="5vh"
+      :close-on-click-modal="false"
+      @close="handlePreviewClose"
+    >
+      <div class="preview-container">
+        <div v-if="previewLoading" class="preview-loading">
+          <i class="el-icon-loading"></i>
+          <p>加载中...</p>
+        </div>
+        <div v-else-if="previewError" class="preview-error">
+          <i class="el-icon-warning"></i>
+          <p>{{ previewError }}</p>
+          <el-button type="primary" size="small" @click="retryPreview">重试</el-button>
+        </div>
+        <iframe
+          v-else
+          ref="previewIframe"
+          :src="previewUrl"
+          class="preview-iframe"
+          frameborder="0"
+          @load="handlePreviewLoad"
+          @error="handlePreviewError"
+        />
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="previewDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handleDownloadFromPreview">下载</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -191,7 +228,8 @@
 import {
   downloadEvaluationStandard,
   getEvaluationViewList,
-  importEvaluationStandard
+  importEvaluationStandard,
+  previewEvaluationStandard
 } from '@/api/evaluation'
 
 export default {
@@ -216,7 +254,12 @@ export default {
       },
       importRules: {
         file: [{ required: true, message: '请上传标准文件', trigger: 'change' }]
-      }
+      },
+      previewDialogVisible: false,
+      previewUrl: '',
+      previewLoading: false,
+      previewError: '',
+      currentPreviewRow: null
     }
   },
   created() {
@@ -396,6 +439,66 @@ export default {
       } finally {
         this.downloadLoadingId = null
       }
+    },
+    // 预览文件
+    async handlePreview(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少文件ID，无法预览')
+        return
+      }
+      this.currentPreviewRow = row
+      this.previewLoading = true
+      this.previewError = ''
+      this.previewDialogVisible = true
+      
+      try {
+        // 通过 API 获取文件流
+        const blob = await previewEvaluationStandard(row.id)
+        // 创建 blob URL 用于预览
+        this.previewUrl = window.URL.createObjectURL(blob)
+        this.previewLoading = false
+      } catch (error) {
+        console.error('预览文件失败:', error)
+        this.previewLoading = false
+        this.previewError = error.message || '文件预览失败，请检查文件格式或稍后重试'
+      }
+    },
+    // 预览加载完成
+    handlePreviewLoad() {
+      this.previewLoading = false
+      this.previewError = ''
+    },
+    // 预览加载错误
+    handlePreviewError() {
+      this.previewLoading = false
+      this.previewError = '文件预览失败，请检查文件格式或稍后重试'
+    },
+    // 关闭预览
+    handlePreviewClose() {
+      // 释放 blob URL 以释放内存
+      if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
+        window.URL.revokeObjectURL(this.previewUrl)
+      }
+      this.previewUrl = ''
+      this.previewLoading = false
+      this.previewError = ''
+      this.currentPreviewRow = null
+      if (this.$refs.previewIframe) {
+        this.$refs.previewIframe.src = ''
+      }
+    },
+    // 重试预览
+    retryPreview() {
+      if (this.currentPreviewRow) {
+        this.handlePreview(this.currentPreviewRow)
+      }
+    },
+    // 从预览窗口下载
+    handleDownloadFromPreview() {
+      if (this.currentPreviewRow) {
+        this.previewDialogVisible = false
+        this.handleDownload(this.currentPreviewRow)
+      }
     }
   }
 }
@@ -467,5 +570,60 @@ export default {
   margin-top: 4px;
   font-size: 12px;
   color: #909399;
+}
+
+.preview-container {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  position: relative;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.preview-loading,
+.preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #909399;
+}
+
+.preview-loading i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: rotating 2s linear infinite;
+}
+
+.preview-error i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #f56c6c;
+}
+
+.preview-loading p,
+.preview-error p {
+  margin: 8px 0 16px;
+  font-size: 14px;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
