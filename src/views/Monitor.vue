@@ -510,12 +510,13 @@
                     }
 
                     const wellCode = well.wellCode || well.well_code
-                    const qualityLevel = this.normalizeQualityLevel(
-                        well.waterQualityLevel || well.qualityLevel || well.level || well.className
-                    )
+                    const rawQualityLevel = well.waterQualityLevel || well.qualityLevel || well.level || well.className
+                    const qualityLevel = this.normalizeQualityLevel(rawQualityLevel)
                     const color = this.getClassColor(qualityLevel)
                     const metricValue = well.metricValue ?? well.value ?? (well.metric && well.metric.value) ?? ''
                     const metricUnit = well.metricUnit || well.unit || indicatorUnit
+                    const markerMetricsName = well.metricsName || well.highestMetricName || well.maxMetricName || indicatorDisplayName
+                    const projectName = well.projectName || well.projectId || ''
 
                     acc.push({
                         coordinates,
@@ -524,11 +525,14 @@
                             parameter: parameterKey,
                             wellCode,
                             metricName: indicatorDisplayName,
+                            metricsName: markerMetricsName,
                             value: metricValue,
                             unit: metricUnit,
                             qualityLevel,
+                            waterQualityLevel: rawQualityLevel || qualityLevel,
                             samplingTime: well.samplingTime || well.measureTime || well.sampleTime || defaultSamplingTime,
-                            color
+                            color,
+                            projectName
                         },
                         style: {
                             shapeType: 0,

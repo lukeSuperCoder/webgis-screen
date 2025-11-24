@@ -65,6 +65,7 @@
                 <div class="table-content">
                   <div class="thead">
                     <span class="header-cell fixed-col-code">井点编号</span>
+                    <span class="header-cell fixed-col-sample">采样编号</span>
                     <span class="header-cell fixed-col-time">采样时间</span>
                     <span
                       v-for="metric in sidePanel.metrics"
@@ -77,6 +78,9 @@
                   <div class="tbody">
                     <div class="tr" v-for="(row,idx) in sidePanel.table" :key="idx">
                       <span class="cell-content fixed-col-code" :title="row.code">{{ row.code }}</span>
+                      <span class="cell-content fixed-col-sample" :title="row.sampleCode || '--'">
+                        {{ row.sampleCode || '--' }}
+                      </span>
                       <span class="cell-content fixed-col-time" :title="row.time">{{ row.time }}</span>
                       <span
                         class="cell-content metric-cell"
@@ -156,7 +160,7 @@
       <div v-if="showPopup" class="popup-container" :style="popupStyle">
         <div class="popup-content">
           <div class="popup-header">
-            <h3 v-if="popupData && popupData.metricValues && popupData.overallClass">综合水质详情</h3>
+            <h3 v-if="popupData">综合水质详情</h3>
             <h3 v-else>{{ popupData.name }}</h3>
             <button @click="closePopup" class="close-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -178,24 +182,38 @@
               <div class="quality-table-wrapper">
                 <table class="quality-table">
                   <thead>
-                    <tr>
+                    <tr v-if="popupData.tableHeaders && popupData.tableHeaders.length">
+                      <th v-for="header in popupData.tableHeaders" :key="header">{{ header }}</th>
+                    </tr>
+                    <tr v-else>
                       <th>监测时间</th>
                       <th>水质等级</th>
                     </tr>
                   </thead>
                   <tbody v-if="popupData.qualityTable && popupData.qualityTable.length">
                     <tr v-for="(row, idx) in popupData.qualityTable" :key="idx">
-                      <td>{{ row.time }}</td>
-                      <td>
-                        <span :class="['quality-level', getQualityLevelClass(row.qualityLevel)]">
-                          {{ row.qualityLevel || '未知' }}
-                        </span>
-                      </td>
+                      <template v-if="popupData.tableHeaders && popupData.tableHeaders.length">
+                        <td>{{ row.wellCode || '--' }}</td>
+                        <td>
+                          <span :class="['quality-level', getQualityLevelClass(row.qualityLevel)]">
+                            {{ row.qualityLevel || '未知' }}
+                          </span>
+                        </td>
+                        <td>{{ row.metricsName || '--' }}</td>
+                      </template>
+                      <template v-else>
+                        <td>{{ row.time }}</td>
+                        <td>
+                          <span :class="['quality-level', getQualityLevelClass(row.qualityLevel)]">
+                            {{ row.qualityLevel || '未知' }}
+                          </span>
+                        </td>
+                      </template>
                     </tr>
                   </tbody>
                   <tbody v-else>
                     <tr>
-                      <td colspan="3">暂无数据</td>
+                      <td :colspan="(popupData.tableHeaders && popupData.tableHeaders.length) || 2">暂无数据</td>
                     </tr>
                   </tbody>
                 </table>
@@ -644,7 +662,8 @@ import * as echarts from 'echarts'
 
           const dataArray = this.normalizeHistoryData(response);
 
-          const tableRowMap = new Map();
+          const tableRows = [];
+          const uniqueTimeMap = new Map();
           const metricSeriesData = {};
           const unitMap = {};
           const metricsSet = new Set();
@@ -676,19 +695,26 @@ import * as echarts from 'echarts'
 
             metricsSet.add(targetMetricName);
 
-            if (!tableRowMap.has(time)) {
-              tableRowMap.set(time, {
-                code: this.sidePanel.wellCode,
-                time,
-                values: {}
-              });
-            }
+            const sampleCode = item.sampleCode || item.sample_code || item.sampleId || '';
+            const rawTimestamp = samplingTime ? new Date(samplingTime).getTime() : Date.now();
+            const timestamp = Number.isNaN(rawTimestamp) ? Date.now() : rawTimestamp;
 
-            const row = tableRowMap.get(time);
+            const row = {
+              code: this.sidePanel.wellCode,
+              sampleCode,
+              time,
+              timestamp,
+              values: {}
+            };
             row.values[targetMetricName] = {
               value,
               unit
             };
+            tableRows.push(row);
+
+            if (!uniqueTimeMap.has(time)) {
+              uniqueTimeMap.set(time, timestamp);
+            }
 
             if (!metricSeriesData[targetMetricName]) {
               metricSeriesData[targetMetricName] = {};
@@ -700,11 +726,20 @@ import * as echarts from 'echarts'
             }
           });
           
-          const allTimesDesc = Array.from(tableRowMap.keys()).sort((a, b) => new Date(b) - new Date(a));
+          const allTimesDesc = Array.from(uniqueTimeMap.keys()).sort(
+            (a, b) => uniqueTimeMap.get(b) - uniqueTimeMap.get(a)
+          );
           const allTimesAsc = [...allTimesDesc].reverse();
           const metrics = Array.from(metricsSet);
+
+          const sortedTableRows = tableRows
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .map(row => {
+              const { timestamp, ...rest } = row;
+              return rest;
+            });
           
-          this.sidePanel.table = allTimesDesc.map(time => tableRowMap.get(time));
+          this.sidePanel.table = sortedTableRows;
           this.sidePanel.metrics = metrics;
           this.sidePanel.unitMap = unitMap;
           this.sidePanel.chart = {
@@ -745,7 +780,7 @@ import * as echarts from 'echarts'
         }
       },
       /**
-       * 加载综合水质历史数据并通过弹框展示（水质等级表格）
+       * 展示综合水质标记信息弹框（直接使用 marker 数据）
        */
       async loadComprehensiveHistoryForPopup(data, event) {
         if (!data || !data.wellCode) {
@@ -753,41 +788,21 @@ import * as echarts from 'echarts'
         }
 
         try {
-          // 计算时间范围：优先使用 sidePanel 的时间范围，其次使用默认 2020-2025
-          const startTime = this.sidePanel.startTime
-            ? new Date(this.sidePanel.startTime + 'T00:00:00')
-            : new Date('2020-01-01T00:00:00');
-          const endTime = this.sidePanel.endTime
-            ? new Date(this.sidePanel.endTime + 'T23:59:59')
-            : new Date('2025-12-31T23:59:59');
-
-          const response = await getSampleQualityLevels({
-            monitoringWellCode: data.wellCode,
-            startTime: this.formatDateTimeForApi(startTime),
-            endTime: this.formatDateTimeForApi(endTime)
-          });
-
-          const dataArray = this.normalizeHistoryData(response);
-
-          const rows = (dataArray || [])
-            .map(item => {
-              const samplingTime = item.samplingTime || item.sampleTime;
-              const qualityLevel = item.qualityLevel || item.overallClass || item.level;
-              if (!samplingTime || !qualityLevel) {
-                return null;
-              }
-              return {
-                wellCode: item.monitoringWellCode || item.wellCode || data.wellCode,
-                time: this.formatDateTime(samplingTime),
-                qualityLevel
-              };
-            })
-            .filter(item => item !== null);
+          const wellCode = data.wellCode;
+          const qualityLevel = data.qualityLevel;
+          const metricsName = data.metricsName || data.highestMetricName || data.maxMetricName || '';
 
           this.popupData = {
-            name: `${data.projectName || '综合水质'}`,
-            wellCode: data.wellCode || '',
-            qualityTable: rows
+            name: `${data.projectName || ''}`,
+            wellCode,
+            tableHeaders: ['井点编号', '水质等级', '最高等级指标'],
+            qualityTable: [
+              {
+                wellCode,
+                qualityLevel,
+                metricsName: metricsName=='综合水质'?'--':metricsName || '--'
+              }
+            ]
           };
 
           this.showPopup = true;
@@ -800,15 +815,22 @@ import * as echarts from 'echarts'
           // 不显示右侧监测井信息面板
           this.wellInfoPanel.visible = false;
         } catch (error) {
-          console.error('加载综合水质历史数据失败:', error);
+          console.error('展示综合水质弹框失败:', error);
           this.popupData = {
-            name: `${data.projectName || '综合水质历史'}  ${data.wellCode || ''}`,
-            wellCode: data.wellCode || '',
-            qualityTable: []
+            name: `${data?.projectName || '综合水质'}  ${data?.wellCode || ''}`,
+            wellCode: data?.wellCode || '',
+            tableHeaders: ['井点编号', '水质等级', '最高等级指标'],
+            qualityTable: [
+              {
+                wellCode: data?.wellCode || '--',
+                qualityLevel: '无质量等级',
+                metricsName: '--'
+              }
+            ]
           };
           this.showPopup = true;
           this.$nextTick(() => {
-            this.popupStyle = this.calculatePopupPosition(event.pixel);
+            this.popupStyle = this.calculatePopupPosition(event?.pixel || [0, 0]);
           });
         }
       },
@@ -1522,6 +1544,9 @@ import * as echarts from 'echarts'
   }
   .fixed-col-code {
     min-width: 120px;
+  }
+  .fixed-col-sample {
+    min-width: 130px;
   }
   .fixed-col-time {
     min-width: 150px;
