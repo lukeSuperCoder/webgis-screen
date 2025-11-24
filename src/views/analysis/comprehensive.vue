@@ -40,6 +40,15 @@
         <el-form-item>
           <el-button type="primary" @click="handleQuery">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button
+            type="primary"
+            icon="el-icon-download"
+            :disabled="multipleSelection.length === 0"
+            :loading="exporting"
+            @click="handleBatchExport"
+          >
+            批量导出
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -47,9 +56,8 @@
     <!-- 数据表格 -->
     <el-card class="table-card">
       <div class="table-header">
-        <div>
-          <h3>监测井监测数据</h3>
-          
+        <div class="table-title">
+          <h3>监测评价结果</h3>
         </div>
         <span class="table-desc">共 {{ tableData.length }} 条</span>
       </div>
@@ -61,7 +69,9 @@
         stripe
         border
         height="calc(100vh - 320px)"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="50" align="center" />
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column
           prop="monitoringWellCode"
@@ -80,28 +90,35 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-for="metric in metricColumns"
-          :key="metric.key"
-          :prop="metric.key"
-          :label="metric.label"
+          prop="qualityLevel"
+          label="综合水质等级"
           align="center"
-          min-width="120"
+          min-width="140"
+        >
+          <template slot-scope="scope">
+            <span :style="{ color: getLevelColor(scope.row.qualityLevel) }">
+              {{ scope.row.qualityLevel || '--' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          v-for="column in metricDisplayColumns"
+          :key="column.key"
+          :prop="column.type === 'value' ? column.metricKey : undefined"
+          :label="column.label"
+          align="center"
+          :min-width="column.type === 'value' ? 120 : 140"
         >
           <template slot-scope="scope">
             <span
               :style="{
-                color: getLevelColor(
-                  scope.row.metrics &&
-                  scope.row.metrics[metric.key]
-                    ? scope.row.metrics[metric.key].level
-                    : ''
-                )
+                color: getLevelColor(getMetricLevel(scope.row, column.metricKey))
               }"
             >
               {{
-                scope.row.metrics && scope.row.metrics[metric.key]
-                  ? scope.row.metrics[metric.key].value
-                  : '--'
+                column.type === 'value'
+                  ? getMetricValue(scope.row, column.metricKey)
+                  : getMetricLevel(scope.row, column.metricKey) || '--'
               }}
             </span>
           </template>
@@ -127,9 +144,30 @@ export default {
       dateRange: [],
       wellList: [],
       loading: false,
+      exporting: false,
       tableData: [],
       metricColumns: [],
-      metricNameKeyMap: {}
+      metricNameKeyMap: {},
+      multipleSelection: []
+    }
+  },
+  computed: {
+    metricDisplayColumns() {
+      return this.metricColumns.reduce((columns, metric) => {
+        columns.push({
+          key: `${metric.key}-value`,
+          label: metric.label,
+          metricKey: metric.key,
+          type: 'value'
+        })
+        columns.push({
+          key: `${metric.key}-level`,
+          label: `${metric.label}质量等级`,
+          metricKey: metric.key,
+          type: 'level'
+        })
+        return columns
+      }, [])
     }
   },
   mounted() {
@@ -254,6 +292,7 @@ export default {
             return {
               monitoringWellCode: item.monitoringWellCode || '未知',
               samplingTime: item.samplingTime,
+              qualityLevel: item.qualityLevel || '',
               metrics: metricsMap
             }
           })
@@ -306,6 +345,98 @@ export default {
       this.$set(this.metricNameKeyMap, metricName, key)
       return key
     },
+    getMetricValue(row, metricKey) {
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '--'
+      const value = row.metrics[metricKey].value
+      return value === undefined || value === null || value === '' ? '--' : value
+    },
+    getMetricLevel(row, metricKey) {
+      if (!row || !row.metrics || !row.metrics[metricKey]) return ''
+      return row.metrics[metricKey].level || ''
+    },
+    handleSelectionChange(selection) {
+      this.multipleSelection = selection || []
+    },
+    handleBatchExport() {
+      if (!this.multipleSelection.length) {
+        this.$message.warning('请先勾选要导出的记录')
+        return
+      }
+
+      this.exporting = true
+      try {
+        const columns = [
+          {
+            label: '序号',
+            getter: (row, rowIndex) => rowIndex + 1
+          },
+          {
+            label: '监测井编号',
+            getter: row => row.monitoringWellCode || '--'
+          },
+          {
+            label: '监测时间',
+            getter: row => this.formatDateTime(row.samplingTime)
+          },
+          {
+            label: '综合水质等级',
+            getter: row => row.qualityLevel || '--'
+          }
+        ]
+
+        this.metricDisplayColumns.forEach(column => {
+          columns.push({
+            label: column.label,
+            getter: row =>
+              column.type === 'value'
+                ? this.getMetricValue(row, column.metricKey)
+                : this.getMetricLevel(row, column.metricKey) || '--'
+          })
+        })
+
+        const headerHtml = `<tr>${columns
+          .map(col => `<th>${this.escapeCell(col.label)}</th>`)
+          .join('')}</tr>`
+
+        const bodyHtml = this.multipleSelection
+          .map((row, index) => {
+            const cells = columns
+              .map(col => `<td>${this.escapeCell(col.getter(row, index))}</td>`)
+              .join('')
+            return `<tr>${cells}</tr>`
+          })
+          .join('')
+
+        const tableHtml = `<table>${headerHtml}${bodyHtml}</table>`
+        const html = `<html><head><meta charset="UTF-8" /></head><body>${tableHtml}</body></html>`
+        const blob = new Blob(['\ufeff' + html], {
+          type: 'application/vnd.ms-excel'
+        })
+        const link = document.createElement('a')
+        const timestamp = new Date().getTime()
+        link.href = URL.createObjectURL(blob)
+        link.download = `监测评价结果_${timestamp}.xls`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(link.href)
+        this.$message.success('导出成功')
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error('导出失败，请稍后重试')
+      } finally {
+        this.exporting = false
+      }
+    },
+    escapeCell(value) {
+      if (value === null || value === undefined) return ''
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+    },
     getLevelColor(level) {
       if (!level) return ''
       const text = String(level)
@@ -355,12 +486,17 @@ export default {
   margin-bottom: 16px;
 }
 
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .table-header h3 {
   margin: 0;
   font-size: 18px;
   color: #303133;
 }
-
 
 .table-desc {
   color: #909399;

@@ -66,16 +66,31 @@
             </template>
           </el-table-column>
           <el-table-column
-            v-for="metric in metricColumns"
-            :key="metric.key"
-            :prop="metric.key"
-            :label="metric.label"
+            prop="qualityLevel"
+            label="综合水质等级"
             align="center"
-            min-width="120"
+            min-width="140"
           >
             <template slot-scope="scope">
-              <span :style="{ color: getLevelColor(scope.row.metrics && scope.row.metrics[metric.key] ? scope.row.metrics[metric.key].level : '') }">
-                {{ scope.row.metrics && scope.row.metrics[metric.key] ? scope.row.metrics[metric.key].value : '--' }}
+              <span :style="{ color: getLevelColor(scope.row.qualityLevel) }">
+                {{ scope.row.qualityLevel || '--' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-for="column in metricDisplayColumns"
+            :key="column.key"
+            :label="column.label"
+            align="center"
+            :min-width="column.type === 'value' ? 120 : 140"
+          >
+            <template slot-scope="scope">
+              <span :style="{ color: getLevelColor(getMetricLevel(scope.row, column.metricKey)) }">
+                {{
+                  column.type === 'value'
+                    ? getMetricValue(scope.row, column.metricKey)
+                    : getMetricLevel(scope.row, column.metricKey) || '--'
+                }}
               </span>
             </template>
           </el-table-column>
@@ -107,6 +122,25 @@ export default {
       metricColumns: [],
       // 指标名到列 key 的映射
       metricNameKeyMap: {}
+    }
+  },
+  computed: {
+    metricDisplayColumns() {
+      return this.metricColumns.reduce((columns, metric) => {
+        columns.push({
+          key: `${metric.key}-value`,
+          label: metric.label,
+          metricKey: metric.key,
+          type: 'value'
+        })
+        columns.push({
+          key: `${metric.key}-level`,
+          label: `${metric.label}质量等级`,
+          metricKey: metric.key,
+          type: 'level'
+        })
+        return columns
+      }, [])
     }
   },
   mounted() {
@@ -264,6 +298,7 @@ export default {
             return {
               monitoringWellCode: item.monitoringWellCode || '未知',
               samplingTime: item.samplingTime,
+              qualityLevel: item.qualityLevel || '',
               metrics: metricsMap
             }
           })
@@ -324,6 +359,21 @@ export default {
       const key = 'm_' + metricName.replace(/\s+/g, '').replace(/[()（）/%]/g, '_')
       this.$set(this.metricNameKeyMap, metricName, key)
       return key
+    },
+    /**
+     * 获取指标值
+     */
+    getMetricValue(row, metricKey) {
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '--'
+      const value = row.metrics[metricKey].value
+      return value === undefined || value === null || value === '' ? '--' : value
+    },
+    /**
+     * 获取指标质量等级
+     */
+    getMetricLevel(row, metricKey) {
+      if (!row || !row.metrics || !row.metrics[metricKey]) return ''
+      return row.metrics[metricKey].level || ''
     },
     /**
      * 根据质量等级获取颜色（复用水质类别图例的颜色规则）

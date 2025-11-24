@@ -25,6 +25,13 @@
               <i class="el-icon-place"></i>
               <span class="menu-text">单项水质分布</span>
             </div>
+            <div 
+              class="menu-subtext" 
+              v-if="selectedIndicatorLabel"
+            >
+              <span class="menu-subtext-label">当前指标：</span>
+              <span class="menu-subtext-value">{{ selectedIndicatorLabel }}</span>
+            </div>
           </div>
           
           <div 
@@ -83,7 +90,7 @@
         <el-select
           id="indicator-select"
           class="indicator-el-select"
-          v-model="selectedParameter"
+          v-model="pendingParameter"
           filterable
           remote
           reserve-keyword
@@ -92,7 +99,6 @@
           placeholder="请选择水质指标"
           :disabled="isLoadingIndicators || !indicatorOptions.length"
           no-data-text="暂无可用指标"
-          @change="handleIndicatorChange"
         >
           <el-option
             v-for="option in indicatorOptions"
@@ -108,6 +114,16 @@
           </el-option>
         </el-select>
       </div>
+      <div class="indicator-actions">
+        <el-button
+          type="primary"
+          size="mini"
+          :disabled="!pendingParameter"
+          @click="handleIndicatorConfirm"
+        >
+          确认
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
@@ -121,6 +137,7 @@ export default {
     return {
       indicatorOptions: [],
       selectedParameter: null,
+      pendingParameter: null,
       isLoadingIndicators: false,
       indicatorFilterParams: {
         filter: ''
@@ -128,12 +145,17 @@ export default {
       indicatorSearchTimer: null,
       showBoundary: false,
       showWells: false,
-      activeMenuItem: null
+      activeMenuItem: null,
+      indicatorCardVisible: false
     }
   },
   computed: {
     showIndicatorCard() {
-      return this.activeMenuItem === 'singleItem'
+      return this.activeMenuItem === 'singleItem' && this.indicatorCardVisible
+    },
+    selectedIndicatorLabel() {
+      const indicator = this.indicatorOptions.find(item => item.value === this.selectedParameter)
+      return indicator ? indicator.label : ''
     }
   },
   created() {
@@ -173,8 +195,8 @@ export default {
           if (this.indicatorOptions.length && !this.selectedParameter) {
             this.selectedParameter = this.indicatorOptions[0].value
           }
-          if (this.activeMenuItem === 'singleItem' && this.selectedParameter) {
-            this.handleIndicatorChange(this.selectedParameter)
+          if (!this.pendingParameter && this.indicatorOptions.length) {
+            this.pendingParameter = this.selectedParameter || this.indicatorOptions[0].value
           }
         } else {
           this.$message.warning('未能获取指标列表，请稍后重试')
@@ -196,33 +218,41 @@ export default {
           this.$message.warning('暂无可用指标')
           return
         }
-        this.activeMenuItem = 'singleItem';
-        const defaultValue = this.selectedParameter || (this.indicatorOptions[0] && this.indicatorOptions[0].value);
-        if (defaultValue) {
-          this.handleIndicatorChange(defaultValue);
+        if (this.activeMenuItem !== 'singleItem') {
+          this.activeMenuItem = 'singleItem'
         }
-        return;
+        if (!this.indicatorCardVisible) {
+          this.indicatorCardVisible = true
+          this.pendingParameter = this.selectedParameter || (this.indicatorOptions[0] && this.indicatorOptions[0].value) || null
+        } else {
+          this.indicatorCardVisible = false
+        }
+        return
       }
 
+      this.indicatorCardVisible = false
       if (this.activeMenuItem === menuType) {
         this.activeMenuItem = null;
       } else {
         this.activeMenuItem = menuType;
       }
-      // 退出单项模式时恢复默认指标
-      if (menuType !== 'singleItem' && this.indicatorOptions.length) {
-        this.selectedParameter = this.indicatorOptions[0].value;
-      }
       this.$emit('menu-clicked', menuType);
     },
 
-    handleIndicatorChange(value) {
-      if (!value) return;
-      const indicator = this.indicatorOptions.find(item => item.value === value);
-      if (!indicator) return;
-      this.selectedParameter = value;
-      this.activeMenuItem = 'singleItem';
-      this.$emit('parameter-selected', indicator);
+    handleIndicatorConfirm() {
+      if (!this.pendingParameter) {
+        this.$message.warning('请选择水质指标')
+        return
+      }
+      const indicator = this.indicatorOptions.find(item => item.value === this.pendingParameter)
+      if (!indicator) {
+        this.$message.warning('所选指标已失效，请重新选择')
+        return
+      }
+      this.selectedParameter = indicator.value
+      this.pendingParameter = indicator.value
+      this.indicatorCardVisible = false
+      this.$emit('parameter-selected', indicator)
     },
     
     handleBoundaryChange() {
@@ -236,8 +266,10 @@ export default {
     // 清除所有高亮状态
     clearAllHighlights() {
       this.activeMenuItem = null;
+      this.indicatorCardVisible = false;
       this.indicatorFilterParams.filter = '';
       this.selectedParameter = this.indicatorOptions.length ? this.indicatorOptions[0].value : null;
+      this.pendingParameter = this.selectedParameter;
     },
     
     // 清除监测井分布勾选状态（不触发事件，避免清除其他按钮高亮）
@@ -341,6 +373,22 @@ export default {
   gap: 8px;
 }
 
+.menu-subtext {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.menu-subtext-label {
+  margin-right: 4px;
+}
+
+.menu-subtext-value {
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
 .menu-icon {
   font-size: 14px;
   width: 16px;
@@ -437,6 +485,12 @@ export default {
   width: 100% !important;
   min-width: 100% !important;
   box-sizing: border-box;
+}
+
+.indicator-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* 响应式设计 */
