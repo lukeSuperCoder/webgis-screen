@@ -89,7 +89,7 @@
                 {{
                   column.type === 'value'
                     ? getMetricValue(scope.row, column.metricKey)
-                    : getMetricLevel(scope.row, column.metricKey) || '--'
+                    : getMetricLevel(scope.row, column.metricKey) || '未检出'
                 }}
               </span>
             </template>
@@ -364,16 +364,16 @@ export default {
      * 获取指标值
      */
     getMetricValue(row, metricKey) {
-      if (!row || !row.metrics || !row.metrics[metricKey]) return '--'
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '未检出'
       const value = row.metrics[metricKey].value
-      return value === undefined || value === null || value === '' ? '--' : value
+      return value === undefined || value === null || value === '' || value == 'ND' ? '未检出' : value
     },
     /**
      * 获取指标质量等级
      */
     getMetricLevel(row, metricKey) {
-      if (!row || !row.metrics || !row.metrics[metricKey]) return ''
-      return row.metrics[metricKey].level || ''
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '未检出'
+      return row.metrics[metricKey].level || '未检出'
     },
     /**
      * 根据质量等级获取颜色（复用水质类别图例的颜色规则）

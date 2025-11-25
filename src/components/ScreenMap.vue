@@ -175,10 +175,6 @@
               v-if="popupData"
               class="comprehensive-quality-table"
             >
-              <div class="info-row">
-                <span class="label">监测井:</span>
-                <span class="value">{{ popupData.wellCode }}</span>
-              </div>
               <div class="quality-table-wrapper">
                 <table class="quality-table">
                   <thead>
@@ -218,7 +214,7 @@
                   </tbody>
                 </table>
               </div>
-            </div>         
+            </div>    
 
           </div>
         </div>
@@ -1440,6 +1436,59 @@ import * as echarts from 'echarts'
     padding: 20px;
     max-height: 200px;
     overflow-y: auto;
+  }
+
+  .comprehensive-quality-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .quality-table-wrapper {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .quality-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .quality-table th {
+    background: rgba(59, 130, 246, 0.08);
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .quality-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #1e293b;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .quality-table th + th,
+  .quality-table td + td {
+    border-left: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .quality-table tbody tr:nth-child(even) td {
+    background: rgba(248, 250, 252, 0.8);
+  }
+
+  .quality-table tbody tr:hover td {
+    background: rgba(59, 130, 246, 0.08);
+  }
+
+  .quality-table tbody tr:last-child td {
+    border-bottom: none;
   }
 
   /* 右侧固定面板 */

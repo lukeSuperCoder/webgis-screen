@@ -345,14 +345,20 @@ export default {
       this.$set(this.metricNameKeyMap, metricName, key)
       return key
     },
-    getMetricValue(row, metricKey) {
-      if (!row || !row.metrics || !row.metrics[metricKey]) return '--'
+    /**
+     * 获取指标值
+     */
+     getMetricValue(row, metricKey) {
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '未检出'
       const value = row.metrics[metricKey].value
-      return value === undefined || value === null || value === '' ? '--' : value
+      return value === undefined || value === null || value === '' || value == 'ND' ? '未检出' : value
     },
+    /**
+     * 获取指标质量等级
+     */
     getMetricLevel(row, metricKey) {
-      if (!row || !row.metrics || !row.metrics[metricKey]) return ''
-      return row.metrics[metricKey].level || ''
+      if (!row || !row.metrics || !row.metrics[metricKey]) return '未检出'
+      return row.metrics[metricKey].level || '未检出'
     },
     handleSelectionChange(selection) {
       this.multipleSelection = selection || []
