@@ -84,18 +84,6 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="qualityLevel" label="质量等级" width="120" align="center">
-          <template slot-scope="scope">
-            <el-tag size="small" type="info">{{ scope.row.qualityLevel || '--' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="范围类型" width="140" align="center">
-          <template slot-scope="scope">
-            <el-tag :type="getRelationTagType(scope.row.relation)" size="small">
-              {{ getRelationText(scope.row.relation) }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column label="下界值" width="120" align="center">
           <template slot-scope="scope">
             {{ formatNumber(scope.row.lowerBound) }}
