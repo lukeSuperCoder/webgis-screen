@@ -34,13 +34,32 @@
 
     <!-- 数据表格 -->
     <el-card class="table-card">
-      <el-table 
-        :data="wellsData" 
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="danger"
+            icon="el-icon-delete"
+            :disabled="selectedRows.length === 0"
+            @click="handleBatchDelete"
+          >
+            批量删除
+          </el-button>
+        </div>
+        <div class="toolbar-right">
+          <span class="result-count">共 {{ total }} 条监测井数据</span>
+        </div>
+      </div>
+
+      <el-table
+        :data="wellsData"
         style="width: 100%"
         :loading="loading"
         stripe
         border
+        :row-key="getRowKey"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="50" align="center"></el-table-column>
         <el-table-column type="index" label="序号" width="60" align="center"></el-table-column>
         <el-table-column prop="wellCode" label="监测井编码" width="150" align="center"></el-table-column>
         <el-table-column prop="provinceName" label="省份" width="120" align="center"></el-table-column>
@@ -60,9 +79,10 @@
             <span v-if="!scope.row.isAreaMonitoringPoint && !scope.row.isWaterSourceMonitoringPoint && !scope.row.isPollutionSourceMonitoringPoint">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column label="操作" width="160" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="editWell(scope.row)">编辑</el-button>
+            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -229,6 +249,7 @@ export default {
         isPollutionSourceMonitoringPoint: '',
         wellOwnershipUnit: ''
       },
+      selectedRows: [],
       // 省市县联动数据
       regionOptions: regionData,
       regionProps: {
@@ -301,6 +322,12 @@ export default {
     this.loadWellsData()
   },
   methods: {
+    getRowKey(row) {
+      return row.id || row.wellCode
+    },
+    handleSelectionChange(selection) {
+      this.selectedRows = selection
+    },
     // 转换区划代码:将6位标准代码转换为element-china-area-data格式
     // 例如: '110000' -> '11', '110100' -> '1101', '110101' -> '110101'
     convertRegionCode(code) {
@@ -534,6 +561,55 @@ export default {
         }
       })
     },
+    // 单条删除
+    handleDelete(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少监测井ID，无法删除')
+        return
+      }
+      this.confirmDelete([row.id], `确定要删除监测井 "${row.wellCode}" 吗？`)
+    },
+    // 批量删除
+    handleBatchDelete() {
+      if (!this.selectedRows.length) {
+        this.$message.warning('请先选择需要删除的记录')
+        return
+      }
+      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
+      if (!ids.length) {
+        this.$message.warning('所选记录缺少ID，无法删除')
+        return
+      }
+      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条监测井数据吗？`)
+    },
+    // 删除确认
+    confirmDelete(ids, message) {
+      this.$confirm(message, '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+        .then(async () => {
+          try {
+            // TODO: 调用删除接口，等待后端接口完成后替换
+            // const res = await deleteMonitorWell(ids.join(','))
+            // if (res && (res.code === 200 || res.code === 0)) {
+            //   this.$message.success('删除成功')
+            //   this.loadWellsData()
+            // } else {
+            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
+            // }
+
+            // 临时模拟删除成功
+            console.log('待删除的监测井IDs:', ids)
+            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+          } catch (error) {
+            console.error('删除监测井失败:', error)
+            this.$message.error('删除失败，请稍后重试')
+          }
+        })
+        .catch(() => {})
+    },
   }
 }
 </script>
@@ -573,6 +649,22 @@ export default {
 
 .table-card {
   flex: 1;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.toolbar-left > * + * {
+  margin-left: 8px;
+}
+
+.result-count {
+  color: #909399;
+  font-size: 13px;
 }
 
 .dialog-footer {

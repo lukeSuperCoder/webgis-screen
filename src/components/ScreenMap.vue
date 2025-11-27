@@ -71,8 +71,9 @@
                       v-for="metric in sidePanel.metrics"
                       :key="metric"
                       class="header-cell metric-header"
+                      :title="getMetricHeaderTitle(metric)"
                     >
-                      {{ metric }}
+                      {{ getMetricHeaderText(metric) }}
                     </span>
                   </div>
                   <div class="tbody">
@@ -273,67 +274,6 @@ import BasemapSwitcher from './BasemapSwitcher.vue'
 import { getMonitorWellInfo } from '@/api/monitorWell'
 import { getSampleQualityLevels } from '@/api/monitorData'
 
-const TOTAL_PHOSPHORUS_METRICS = [
-  '甲基对硫磷',
-  '马拉硫磷',
-  '五氟化磷',
-  '三氯化磷',
-  '三氟化磷',
-  '丙胺氟磷',
-  '三苯基磷',
-  '三(2-甲基氮丙啶)氧化磷',
-  '氧溴化磷',
-  '三溴化磷',
-  '五溴化磷',
-  '甲基内吸磷',
-  '定菌磷',
-  '碘吸磷',
-  '氯亚磷',
-  '甲基硫环磷',
-  '保米磷',
-  '辛硫磷',
-  '四丁基碘化磷',
-  '嘧啶硫磷',
-  '溴代毒鼠磷',
-  '氯硫磷',
-  '因毒磷',
-  '脱叶亚磷',
-  '异丙磷',
-  '敌杀磷',
-  '除线磷',
-  '育畜磷',
-  '杀螟硫磷',
-  '三氯氧磷',
-  '五氯化磷',
-  '嘧啶氧磷',
-  '糠硫磷',
-  '二嗪磷',
-  '甲基三硫磷',
-  '双硫磷',
-  '甲丙硫磷',
-  '三唑磷',
-  '甲基嘧啶磷',
-  '皮蝇磷',
-  '乙酰甲胺磷',
-  '三氧化二磷',
-  '五氧化二磷',
-  '五硫化二磷',
-  '三硫化四磷',
-  '七硫化四磷',
-  '三硫化二磷',
-  '白磷',
-  '田乐磷',
-  '灭蚜磷',
-  '四丁基氢氧化磷',
-  '红磷',
-  '溴硫磷',
-  '伏杀磷',
-  '丙硫磷',
-  '速灭磷',
-  '内吸磷',
-  '地胺磷',
-  '胺吸磷'
-]
 import * as echarts from 'echarts'
 
   export default {
@@ -743,8 +683,6 @@ import * as echarts from 'echarts'
             series: metrics.map(metricName => ({
               name: metricName,
               type: 'line',
-              showSymbol: false,
-              connectNulls: true,
               data: allTimesAsc.map(time => metricSeriesData[metricName]?.[time] ?? null)
             }))
           };
@@ -851,20 +789,39 @@ import * as echarts from 'echarts'
           return '-';
         }
         const record = row.values[metricName];
-        const unit = record.unit && record.unit !== '/' ? record.unit : '';
         if (record.value === undefined || record.value === null || record.value === '') {
           return '-';
         }
-        return `${record.value}${unit}`;
+        return record.value;
       },
       getMetricCellTitle(row, metricName) {
         if (!row || !row.values || !row.values[metricName]) {
           return `${metricName}: 暂无数据`;
         }
         const record = row.values[metricName];
-        const unit = record.unit && record.unit !== '/' ? record.unit : '';
+        const unit = record.unit && record.unit !== '/' ? ` ${record.unit}` : '';
         const value = record.value === undefined || record.value === null || record.value === '' ? '-' : record.value;
         return `${metricName}: ${value}${unit}`;
+      },
+      /**
+       * 获取表头显示文本(指标名+单位)
+       */
+      getMetricHeaderText(metricName) {
+        const unit = this.sidePanel.unitMap[metricName];
+        if (unit && unit !== '/' && unit !== '') {
+          return `${metricName}(${unit})`;
+        }
+        return metricName;
+      },
+      /**
+       * 获取表头tooltip
+       */
+      getMetricHeaderTitle(metricName) {
+        const unit = this.sidePanel.unitMap[metricName];
+        if (unit && unit !== '/' && unit !== '') {
+          return `${metricName}，单位：${unit}`;
+        }
+        return metricName;
       },
       /**
        * 监测数据展板时间范围改变处理
@@ -945,7 +902,7 @@ import * as echarts from 'echarts'
           const normalizedSeries = resolvedSeries.map(seriesItem => ({
             ...seriesItem,
             smooth: true,
-            showSymbol: false,
+            showSymbol: true,
             connectNulls: true,
             emphasis: { focus: 'series' },
             data: seriesItem.data.map(val => (val === undefined ? null : val))

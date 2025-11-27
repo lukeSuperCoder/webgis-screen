@@ -38,13 +38,32 @@
 
     <!-- 列表 -->
     <el-card class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <el-button
+            type="danger"
+            icon="el-icon-delete"
+            :disabled="selectedRows.length === 0"
+            @click="handleBatchDelete"
+          >
+            批量删除
+          </el-button>
+        </div>
+        <div class="toolbar-right">
+          <span class="result-count">共 {{ total }} 条水源地数据</span>
+        </div>
+      </div>
+
       <el-table
         :data="tableData"
         style="width:100%"
         :loading="loading"
         stripe
         border
+        :row-key="getRowKey"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="50" align="center" />
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="sourceName" label="水源名称" min-width="160" />
         <el-table-column prop="sourceLevel" label="水源级别" width="120" align="center" />
@@ -62,9 +81,10 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="center" fixed="right">
+        <el-table-column label="操作" width="160" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="editSource(scope.row)">编辑</el-button>
+            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -211,6 +231,7 @@ export default {
         cityCode: '',
         countyCode: ''
       },
+      selectedRows: [],
       regionOptions: regionData,
       regionProps: {
         value: 'value',
@@ -258,6 +279,12 @@ export default {
     this.loadList()
   },
   methods: {
+    getRowKey(row) {
+      return row.sourceId || row.id
+    },
+    handleSelectionChange(selection) {
+      this.selectedRows = selection
+    },
     convertRegionCode(code) {
       if (!code) return code
       return code.replace(/0+$/, '')
@@ -396,6 +423,55 @@ export default {
         }
       })
     },
+    // 单条删除
+    handleDelete(row) {
+      if (!row || !row.sourceId) {
+        this.$message.warning('缺少水源地ID，无法删除')
+        return
+      }
+      this.confirmDelete([row.sourceId], `确定要删除水源地 "${row.sourceName}" 吗？`)
+    },
+    // 批量删除
+    handleBatchDelete() {
+      if (!this.selectedRows.length) {
+        this.$message.warning('请先选择需要删除的记录')
+        return
+      }
+      const ids = this.selectedRows.map(item => item.sourceId).filter(Boolean)
+      if (!ids.length) {
+        this.$message.warning('所选记录缺少ID，无法删除')
+        return
+      }
+      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条水源地数据吗？`)
+    },
+    // 删除确认
+    confirmDelete(ids, message) {
+      this.$confirm(message, '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+        .then(async () => {
+          try {
+            // TODO: 调用删除接口，等待后端接口完成后替换
+            // const res = await deleteWaterSource(ids.join(','))
+            // if (res && (res.code === 200 || res.code === 0)) {
+            //   this.$message.success('删除成功')
+            //   this.loadList()
+            // } else {
+            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
+            // }
+
+            // 临时模拟删除成功
+            console.log('待删除的水源地IDs:', ids)
+            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+          } catch (error) {
+            console.error('删除水源地失败:', error)
+            this.$message.error('删除失败，请稍后重试')
+          }
+        })
+        .catch(() => {})
+    },
     handleImportExcel() {
       const input = document.createElement('input')
       input.type = 'file'
@@ -476,6 +552,22 @@ export default {
 
 .table-card {
   flex: 1;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.toolbar-left > * + * {
+  margin-left: 8px;
+}
+
+.result-count {
+  color: #909399;
+  font-size: 13px;
 }
 
 .dialog-footer {

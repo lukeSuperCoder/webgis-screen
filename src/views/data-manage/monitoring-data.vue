@@ -32,6 +32,14 @@
       
       <!-- 操作按钮区域 -->
       <div class="action-buttons">
+        <el-button
+          type="danger"
+          icon="el-icon-delete"
+          :disabled="selectedRows.length === 0"
+          @click="handleBatchDelete"
+        >
+          批量删除
+        </el-button>
         <el-button type="success" @click="handleImport" :loading="importLoading">导入</el-button>
         <el-button type="primary" @click="handleDownloadTemplate">下载模版</el-button>
       </div>
@@ -39,15 +47,23 @@
 
     <!-- 数据表格 -->
     <el-card class="table-card">
-      <el-table 
-        :data="dataList" 
+      <div class="table-toolbar">
+        <div class="toolbar-right">
+          <span class="result-count">共 {{ total }} 条监测数据</span>
+        </div>
+      </div>
+
+      <el-table
+        :data="dataList"
         style="width: 100%"
         :loading="loading"
         stripe
         border
         :expand-row-keys="expandedRows"
         :row-key="getRowKey"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="50" align="center"></el-table-column>
         <el-table-column type="expand" width="50" align="center">
           <template slot-scope="scope">
             <div class="metric-details">
@@ -81,6 +97,11 @@
         <el-table-column label="指标数量" width="100" align="center">
           <template slot-scope="scope">
             {{ scope.row.metricValues ? scope.row.metricValues.length : 0 }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" align="center" fixed="right">
+          <template slot-scope="scope">
+            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -118,6 +139,7 @@ export default {
         monitoringWellCode: '',
         samplingTime: []
       },
+      selectedRows: [],
       dataList: [],
       currentPage: 1,
       pageSize: 10,
@@ -129,6 +151,9 @@ export default {
     this.loadDataList()
   },
   methods: {
+    handleSelectionChange(selection) {
+      this.selectedRows = selection
+    },
     // 下载模版
     handleDownloadTemplate() {
       downloadMonitorDataTemplate()
@@ -253,6 +278,55 @@ export default {
         return dateTime
       }
     },
+    // 单条删除
+    handleDelete(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少监测数据ID，无法删除')
+        return
+      }
+      this.confirmDelete([row.id], `确定要删除监测井 "${row.monitoringWellCode}" 在 "${this.formatDateTime(row.samplingTime)}" 的监测数据吗？`)
+    },
+    // 批量删除
+    handleBatchDelete() {
+      if (!this.selectedRows.length) {
+        this.$message.warning('请先选择需要删除的记录')
+        return
+      }
+      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
+      if (!ids.length) {
+        this.$message.warning('所选记录缺少ID，无法删除')
+        return
+      }
+      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条监测数据吗？`)
+    },
+    // 删除确认
+    confirmDelete(ids, message) {
+      this.$confirm(message, '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+        .then(async () => {
+          try {
+            // TODO: 调用删除接口，等待后端接口完成后替换
+            // const res = await deleteSampleData(ids.join(','))
+            // if (res && (res.code === 200 || res.code === 0)) {
+            //   this.$message.success('删除成功')
+            //   this.loadDataList()
+            // } else {
+            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
+            // }
+
+            // 临时模拟删除成功
+            console.log('待删除的监测数据IDs:', ids)
+            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+          } catch (error) {
+            console.error('删除监测数据失败:', error)
+            this.$message.error('删除失败，请稍后重试')
+          }
+        })
+        .catch(() => {})
+    },
   }
 }
 </script>
@@ -292,6 +366,18 @@ export default {
 
 .table-card {
   flex: 1;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.result-count {
+  color: #909399;
+  font-size: 13px;
 }
 
 .dialog-footer {

@@ -40,19 +40,36 @@
       <!-- 操作按钮区域 -->
       <div class="action-buttons">
         <el-button type="primary" @click="addProject">新增</el-button>
+        <el-button
+          type="danger"
+          icon="el-icon-delete"
+          :disabled="selectedRows.length === 0"
+          @click="handleBatchDelete"
+        >
+          批量删除
+        </el-button>
         <el-button type="success" @click="handleImport">上传边界</el-button>
       </div>
     </div>
 
     <!-- 数据表格 -->
     <el-card class="table-card">
-      <el-table 
-        :data="projectsData" 
+      <div class="table-toolbar">
+        <div class="toolbar-right">
+          <span class="result-count">共 {{ total }} 条监测项目数据</span>
+        </div>
+      </div>
+
+      <el-table
+        :data="projectsData"
         style="width: 100%"
         :loading="loading"
         stripe
         border
+        :row-key="getRowKey"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="50" align="center"></el-table-column>
         <el-table-column type="index" label="序号" width="60" align="center"></el-table-column>
         <el-table-column prop="projectCode" label="项目编码" width="200" align="center"></el-table-column>
         <el-table-column prop="projectType" label="项目类型" width="150" align="center">
@@ -80,9 +97,10 @@
             {{ scope.row.companyCode || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="160" align="center" fixed="right">
           <template slot-scope="scope">
             <el-button size="mini" type="primary" @click="editProject(scope.row)">编辑</el-button>
+            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -175,6 +193,7 @@ export default {
         projectType: '',
         companyName: ''
       },
+      selectedRows: [],
       projectsData: [],
       currentPage: 1,
       pageSize: 10,
@@ -209,6 +228,12 @@ export default {
     this.loadProjectsData()
   },
   methods: {
+    getRowKey(row) {
+      return row.id || row.projectCode
+    },
+    handleSelectionChange(selection) {
+      this.selectedRows = selection
+    },
     // 加载项目数据
     async loadProjectsData() {
       this.loading = true
@@ -432,7 +457,56 @@ export default {
           }
         }
       })
-    }
+    },
+    // 单条删除
+    handleDelete(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少项目ID，无法删除')
+        return
+      }
+      this.confirmDelete([row.id], `确定要删除项目 "${row.projectCode}" 吗？`)
+    },
+    // 批量删除
+    handleBatchDelete() {
+      if (!this.selectedRows.length) {
+        this.$message.warning('请先选择需要删除的记录')
+        return
+      }
+      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
+      if (!ids.length) {
+        this.$message.warning('所选记录缺少ID，无法删除')
+        return
+      }
+      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条监测项目数据吗？`)
+    },
+    // 删除确认
+    confirmDelete(ids, message) {
+      this.$confirm(message, '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+        .then(async () => {
+          try {
+            // TODO: 调用删除接口，等待后端接口完成后替换
+            // const res = await deleteProject(ids.join(','))
+            // if (res && (res.code === 200 || res.code === 0)) {
+            //   this.$message.success('删除成功')
+            //   this.loadProjectsData()
+            // } else {
+            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
+            // }
+
+            // 临时模拟删除成功
+            console.log('待删除的监测项目IDs:', ids)
+            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+          } catch (error) {
+            console.error('删除监测项目失败:', error)
+            this.$message.error('删除失败，请稍后重试')
+          }
+        })
+        .catch(() => {})
+    },
   }
 }
 </script>
@@ -472,6 +546,18 @@ export default {
 
 .table-card {
   flex: 1;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.result-count {
+  color: #909399;
+  font-size: 13px;
 }
 
 .dialog-footer {
