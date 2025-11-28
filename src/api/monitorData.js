@@ -162,6 +162,26 @@ export function getSampleQualityLevels(params) {
 // }
 
 /**
+ * 批量删除监测样本数据（根据监测井编码和样品编码）
+ * @param {Array<Object>} deleteItems - 删除项数组
+ * @param {string} deleteItems[].monitoringWellCode - 监测井编码
+ * @param {string} deleteItems[].sampleCode - 样品编码
+ * @returns {Promise} 返回删除结果 { code, msg, data }
+ * @example
+ * batchDeleteSampleData([
+ *   { monitoringWellCode: 'WELL-001', sampleCode: 'SAMPLE-001' },
+ *   { monitoringWellCode: 'WELL-002', sampleCode: 'SAMPLE-002' }
+ * ])
+ */
+export function batchDeleteSampleData(deleteItems) {
+  return request({
+    url: '/monitor/sample/deleteByCodes',
+    method: 'delete',
+    data: deleteItems
+  })
+}
+
+/**
  * 导出监测样本数据（导出为Excel文件）
  * ⚠️ 注意：此接口在OpenAPI文档中未定义，后端未实现，已禁用
  * @deprecated 此接口已被禁用，因为后端未实现。如需使用，请先让后端实现此接口并在OpenAPI文档中定义。

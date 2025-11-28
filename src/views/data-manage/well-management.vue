@@ -228,7 +228,8 @@ import {
   getMonitorWellList,
   updateMonitorWell,
   getMonitorWellInfo,
-  importMonitorWell
+  importMonitorWell,
+  batchDeleteMonitorWells
 } from '@/api/monitorWell'
 import { regionData } from 'element-china-area-data'
 import { downloadMonitorWellTemplate } from '@/utils/download'
@@ -563,11 +564,11 @@ export default {
     },
     // 单条删除
     handleDelete(row) {
-      if (!row || !row.id) {
+      if (!row || !row.wellCode) {
         this.$message.warning('缺少监测井ID，无法删除')
         return
       }
-      this.confirmDelete([row.id], `确定要删除监测井 "${row.wellCode}" 吗？`)
+      this.confirmDelete([row.wellCode], `确定要删除监测井 "${row.wellCode}" 吗？`)
     },
     // 批量删除
     handleBatchDelete() {
@@ -575,7 +576,7 @@ export default {
         this.$message.warning('请先选择需要删除的记录')
         return
       }
-      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
+      const ids = this.selectedRows.map(item => item.wellCode).filter(Boolean)
       if (!ids.length) {
         this.$message.warning('所选记录缺少ID，无法删除')
         return
@@ -591,18 +592,13 @@ export default {
       })
         .then(async () => {
           try {
-            // TODO: 调用删除接口，等待后端接口完成后替换
-            // const res = await deleteMonitorWell(ids.join(','))
-            // if (res && (res.code === 200 || res.code === 0)) {
-            //   this.$message.success('删除成功')
-            //   this.loadWellsData()
-            // } else {
-            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
-            // }
-
-            // 临时模拟删除成功
-            console.log('待删除的监测井IDs:', ids)
-            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+            const res = await batchDeleteMonitorWells(ids)
+            if (res && (res.code === 200 || res.code === 0)) {
+              this.$message.success('删除成功')
+              this.loadWellsData()
+            } else {
+              this.$message.error(res && res.msg ? res.msg : '删除失败')
+            }
           } catch (error) {
             console.error('删除监测井失败:', error)
             this.$message.error('删除失败，请稍后重试')

@@ -1697,6 +1697,61 @@
         ]
       }
     },
+    "/monitor/well/batchDelete": {
+      "post": {
+        "tags": [
+          "监测井管理"
+        ],
+        "summary": "批量删除监测井",
+        "operationId": "batchDeleteMonitorWellsUsingPOST",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "Authorization": [
+              "global"
+            ]
+          }
+        ]
+      }
+    },
     "/monitor/well/export": {
       "post": {
         "tags": [
@@ -3747,6 +3802,58 @@
                 "items": {
                   "type": "integer",
                   "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "Authorization": [
+              "global"
+            ]
+          }
+        ]
+      }
+    },
+    "/monitor/sample/deleteByCodes": {
+      "delete": {
+        "tags": [
+          "监测数据管理"
+        ],
+        "summary": "根据监测井编码和样品编码批量删除地下水样品检测信息",
+        "operationId": "deleteSampleDataByCodesUsingDELETE",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/批量删除地下水样品检测信息"
                 }
               }
             }
@@ -14236,6 +14343,59 @@
         ]
       }
     },
+    "/waterSourceInfo/batch": {
+      "delete": {
+        "tags": [
+          "水源地信息管理"
+        ],
+        "summary": "批量删除水源信息",
+        "operationId": "batchDeleteWaterSourceInfoUsingDELETE",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "Authorization": [
+              "global"
+            ]
+          }
+        ]
+      }
+    },
     "/waterSourceInfo/importExcel": {
       "post": {
         "tags": [
@@ -15906,6 +16066,24 @@
           "testingLaboratory": {
             "type": "string",
             "description": "检测实验室"
+          }
+        }
+      },
+      "批量删除地下水样品检测信息": {
+        "title": "批量删除地下水样品检测信息",
+        "required": [
+          "monitoringWellCode",
+          "sampleCode"
+        ],
+        "type": "object",
+        "properties": {
+          "monitoringWellCode": {
+            "type": "string",
+            "description": "监测井编码"
+          },
+          "sampleCode": {
+            "type": "string",
+            "description": "样品编码"
           }
         }
       },

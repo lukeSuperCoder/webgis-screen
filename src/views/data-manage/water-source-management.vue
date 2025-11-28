@@ -214,7 +214,8 @@ import {
   getWaterSourceInfoById,
   updateWaterSourceInfo,
   importWaterSourceExcel,
-  importWaterSourceShp
+  importWaterSourceShp,
+  batchDeleteWaterSource
 } from '@/api/waterSource'
 import { regionData } from 'element-china-area-data'
 import { downloadWaterSourceTemplate } from '@/utils/download'
@@ -453,18 +454,13 @@ export default {
       })
         .then(async () => {
           try {
-            // TODO: 调用删除接口，等待后端接口完成后替换
-            // const res = await deleteWaterSource(ids.join(','))
-            // if (res && (res.code === 200 || res.code === 0)) {
-            //   this.$message.success('删除成功')
-            //   this.loadList()
-            // } else {
-            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
-            // }
-
-            // 临时模拟删除成功
-            console.log('待删除的水源地IDs:', ids)
-            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+            const res = await batchDeleteWaterSource(ids)
+            if (res && (res.code === 200 || res.code === 0)) {
+              this.$message.success('删除成功')
+              this.loadList()
+            } else {
+              this.$message.error(res && res.msg ? res.msg : '删除失败')
+            }
           } catch (error) {
             console.error('删除水源地失败:', error)
             this.$message.error('删除失败，请稍后重试')

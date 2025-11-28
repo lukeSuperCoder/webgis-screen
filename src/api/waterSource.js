@@ -80,6 +80,21 @@ export function importWaterSourceShp(formData) {
 }
 
 /**
+ * 批量删除水源地信息
+ * @param {Array<number>} sourceIds - 水源地ID数组
+ * @returns {Promise} 返回删除结果 { code, msg, data }
+ * @example
+ * batchDeleteWaterSource([1, 2, 3])
+ */
+export function batchDeleteWaterSource(sourceIds) {
+  return request({
+    url: '/waterSourceInfo/batch',
+    method: 'delete',
+    data: sourceIds
+  })
+}
+
+/**
  * 获取所有水源名称
  */
 export function getWaterSourceNames() {

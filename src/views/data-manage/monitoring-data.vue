@@ -125,7 +125,8 @@
 <script>
 import {
   getSampleList,
-  importSampleData
+  importSampleData,
+  batchDeleteSampleData
 } from '@/api/monitorData'
 import { downloadMonitorDataTemplate } from '@/utils/download'
 
@@ -280,11 +281,15 @@ export default {
     },
     // 单条删除
     handleDelete(row) {
-      if (!row || !row.id) {
-        this.$message.warning('缺少监测数据ID，无法删除')
+      if (!row || !row.monitoringWellCode || !row.sampleCode) {
+        this.$message.warning('缺少监测井编码或样品编码，无法删除')
         return
       }
-      this.confirmDelete([row.id], `确定要删除监测井 "${row.monitoringWellCode}" 在 "${this.formatDateTime(row.samplingTime)}" 的监测数据吗？`)
+      const deleteItem = {
+        monitoringWellCode: row.monitoringWellCode,
+        sampleCode: row.sampleCode
+      }
+      this.confirmDelete([deleteItem], `确定要删除监测井 "${row.monitoringWellCode}" 在 "${this.formatDateTime(row.samplingTime)}" 的监测数据吗？`)
     },
     // 批量删除
     handleBatchDelete() {
@@ -292,15 +297,19 @@ export default {
         this.$message.warning('请先选择需要删除的记录')
         return
       }
-      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
-      if (!ids.length) {
-        this.$message.warning('所选记录缺少ID，无法删除')
+      const deleteItems = this.selectedRows.map(item => ({
+        monitoringWellCode: item.monitoringWellCode,
+        sampleCode: item.sampleCode
+      })).filter(item => item.monitoringWellCode && item.sampleCode)
+
+      if (!deleteItems.length) {
+        this.$message.warning('所选记录缺少监测井编码或样品编码，无法删除')
         return
       }
-      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条监测数据吗？`)
+      this.confirmDelete(deleteItems, `确定要删除选中的 ${deleteItems.length} 条监测数据吗？`)
     },
     // 删除确认
-    confirmDelete(ids, message) {
+    confirmDelete(deleteItems, message) {
       this.$confirm(message, '提示', {
         type: 'warning',
         confirmButtonText: '确定',
@@ -308,18 +317,13 @@ export default {
       })
         .then(async () => {
           try {
-            // TODO: 调用删除接口，等待后端接口完成后替换
-            // const res = await deleteSampleData(ids.join(','))
-            // if (res && (res.code === 200 || res.code === 0)) {
-            //   this.$message.success('删除成功')
-            //   this.loadDataList()
-            // } else {
-            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
-            // }
-
-            // 临时模拟删除成功
-            console.log('待删除的监测数据IDs:', ids)
-            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+            const res = await batchDeleteSampleData(deleteItems)
+            if (res && (res.code === 200 || res.code === 0)) {
+              this.$message.success('删除成功')
+              this.loadDataList()
+            } else {
+              this.$message.error(res && res.msg ? res.msg : '删除失败')
+            }
           } catch (error) {
             console.error('删除监测数据失败:', error)
             this.$message.error('删除失败，请稍后重试')

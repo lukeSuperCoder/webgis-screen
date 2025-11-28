@@ -175,12 +175,13 @@
 </template>
 
 <script>
-import { 
-  getProjectList, 
-  addProject, 
-  updateProject, 
+import {
+  getProjectList,
+  addProject,
+  updateProject,
   getCompanyNames,
-  importShpData
+  importShpData,
+  batchDeleteProjects
 } from '@/api/project'
 
 export default {
@@ -460,11 +461,11 @@ export default {
     },
     // 单条删除
     handleDelete(row) {
-      if (!row || !row.id) {
-        this.$message.warning('缺少项目ID，无法删除')
+      if (!row || !row.projectCode) {
+        this.$message.warning('缺少项目编码，无法删除')
         return
       }
-      this.confirmDelete([row.id], `确定要删除项目 "${row.projectCode}" 吗？`)
+      this.confirmDelete([row.projectCode], `确定要删除项目 "${row.projectCode}" 吗？`)
     },
     // 批量删除
     handleBatchDelete() {
@@ -472,15 +473,15 @@ export default {
         this.$message.warning('请先选择需要删除的记录')
         return
       }
-      const ids = this.selectedRows.map(item => item.id).filter(Boolean)
-      if (!ids.length) {
-        this.$message.warning('所选记录缺少ID，无法删除')
+      const projectCodes = this.selectedRows.map(item => item.projectCode).filter(Boolean)
+      if (!projectCodes.length) {
+        this.$message.warning('所选记录缺少项目编码，无法删除')
         return
       }
-      this.confirmDelete(ids, `确定要删除选中的 ${ids.length} 条监测项目数据吗？`)
+      this.confirmDelete(projectCodes, `确定要删除选中的 ${projectCodes.length} 条监测项目数据吗？`)
     },
     // 删除确认
-    confirmDelete(ids, message) {
+    confirmDelete(projectCodes, message) {
       this.$confirm(message, '提示', {
         type: 'warning',
         confirmButtonText: '确定',
@@ -488,18 +489,13 @@ export default {
       })
         .then(async () => {
           try {
-            // TODO: 调用删除接口，等待后端接口完成后替换
-            // const res = await deleteProject(ids.join(','))
-            // if (res && (res.code === 200 || res.code === 0)) {
-            //   this.$message.success('删除成功')
-            //   this.loadProjectsData()
-            // } else {
-            //   this.$message.error(res && res.msg ? res.msg : '删除失败')
-            // }
-
-            // 临时模拟删除成功
-            console.log('待删除的监测项目IDs:', ids)
-            this.$message.info('删除功能已准备就绪，等待后端接口对接')
+            const res = await batchDeleteProjects(projectCodes)
+            if (res && (res.code === 200 || res.code === 0)) {
+              this.$message.success('删除成功')
+              this.loadProjectsData()
+            } else {
+              this.$message.error(res && res.msg ? res.msg : '删除失败')
+            }
           } catch (error) {
             console.error('删除监测项目失败:', error)
             this.$message.error('删除失败，请稍后重试')

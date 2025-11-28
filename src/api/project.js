@@ -95,6 +95,21 @@ export function updateProject(data) {
 // }
 
 /**
+ * 批量删除项目
+ * @param {Array<string>} projectCodes - 项目编码数组
+ * @returns {Promise} 返回删除结果 { code, msg, data }
+ * @example
+ * batchDeleteProjects(['PROJECT-001', 'PROJECT-002'])
+ */
+export function batchDeleteProjects(projectCodes) {
+  return request({
+    url: '/project',
+    method: 'delete',
+    data: projectCodes
+  })
+}
+
+/**
  * 获取所有企业名称
  * @returns {Promise} 返回企业名称列表 { code, msg, data }
  * @example

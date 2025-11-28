@@ -70,7 +70,7 @@ export function updateMonitorWell(data) {
 }
 
 /**
- * 删除监测井
+ * 批量删除监测井（根据wellCode）
  * @param {string|Array} wellCodes - 井编码或井编码数组
  */
 export function deleteMonitorWell(wellCodes) {
@@ -78,6 +78,21 @@ export function deleteMonitorWell(wellCodes) {
     url: '/monitor/well/wellCodes',
     method: 'delete',
     data: wellCodes
+  })
+}
+
+/**
+ * 批量删除监测井（根据ID）
+ * @param {Array<string>} ids - 监测井ID数组
+ * @returns {Promise} 返回删除结果 { code, msg, data }
+ * @example
+ * batchDeleteMonitorWells(['1', '2', '3'])
+ */
+export function batchDeleteMonitorWells(ids) {
+  return request({
+    url: '/monitor/well/batchDelete',
+    method: 'post',
+    data: ids
   })
 }
 
