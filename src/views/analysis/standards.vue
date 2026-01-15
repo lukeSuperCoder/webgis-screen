@@ -1,0 +1,581 @@
+<template>
+  <div class="standards-view">
+    <!-- 查询条件 -->
+    <el-card class="filter-card">
+      <el-form :model="queryForm" :inline="true" label-width="100px" class="filter-form">
+        <el-form-item label="标准名称:">
+          <el-input
+            v-model="queryForm.standardName"
+            placeholder="请输入标准名称"
+            clearable
+            style="width: 260px;"
+          />
+        </el-form-item>
+        <el-form-item label="创建时间:">
+          <el-date-picker
+            v-model="queryForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            unlink-panels
+            value-format="yyyy-MM-dd"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" @click="handleQuery">查询</el-button>
+          <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 标准文件列表 -->
+    <el-card class="table-card">
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <el-button type="primary" icon="el-icon-upload2" @click="openImportDialog">
+            导入文件
+          </el-button>
+        </div>
+      </div>
+
+      <el-table
+        :data="tableData"
+        border
+        stripe
+        :loading="loading"
+        :row-key="getRowKey"
+      >
+        <el-table-column type="index" label="序号" width="60" align="center" />
+        <el-table-column
+          prop="standardName"
+          label="标准名称"
+          min-width="220"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="createTime"
+          label="上传时间"
+          width="280"
+          align="center"
+        >
+          <template slot-scope="scope">
+            {{ formatDateTime(scope.row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" align="center" fixed="right">
+          <template slot-scope="scope">
+            <el-button
+              type="text"
+              size="mini"
+              icon="el-icon-view"
+              @click="handlePreview(scope.row)"
+            >
+              预览
+            </el-button>
+            <el-button
+              type="text"
+              size="mini"
+              icon="el-icon-download"
+              :loading="downloadLoadingId === scope.row.id"
+              @click="handleDownload(scope.row)"
+            >
+              下载
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-pagination
+        class="table-pagination"
+        layout="total, sizes, prev, pager, next"
+        :page-size="pageSize"
+        :current-page="currentPage"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </el-card>
+
+    <!-- 导入弹窗 -->
+    <el-dialog
+      title="导入评价标准文件"
+      :visible.sync="importDialogVisible"
+      width="520px"
+      @close="resetImportForm"
+    >
+      <el-form
+        ref="importFormRef"
+        :model="importForm"
+        :rules="importRules"
+        label-width="120px"
+      >
+        <el-form-item label="标准文件" prop="file">
+          <div class="file-picker">
+            <el-input
+              v-model="importForm.fileName"
+              placeholder="请选择要导入的文件"
+              readonly
+            />
+            <el-button @click="triggerFileSelect">选择文件</el-button>
+            <input
+              ref="fileInputRef"
+              type="file"
+              class="hidden-file-input"
+              accept=".doc,.docx,.pdf"
+              @change="handleFileChange"
+            />
+          </div>
+          <p class="upload-tip">
+            支持 .doc、.docx、.pdf，单个文件不超过 10 MB。
+          </p>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importLoading" @click="submitImport">
+          开始导入
+        </el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 文件预览弹窗 -->
+    <el-dialog
+      title="文件预览"
+      :visible.sync="previewDialogVisible"
+      width="90%"
+      top="5vh"
+      :close-on-click-modal="false"
+      @close="handlePreviewClose"
+    >
+      <div class="preview-container">
+        <div v-if="previewLoading" class="preview-loading">
+          <i class="el-icon-loading"></i>
+          <p>加载中...</p>
+        </div>
+        <div v-else-if="previewError" class="preview-error">
+          <i class="el-icon-warning"></i>
+          <p>{{ previewError }}</p>
+          <el-button type="primary" size="small" @click="retryPreview">重试</el-button>
+        </div>
+        <iframe
+          v-else
+          ref="previewIframe"
+          :src="previewUrl"
+          class="preview-iframe"
+          frameborder="0"
+          @load="handlePreviewLoad"
+          @error="handlePreviewError"
+        />
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="previewDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handleDownloadFromPreview">下载</el-button>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import {
+  downloadEvaluationStandard,
+  getEvaluationViewList,
+  importEvaluationStandard,
+  previewEvaluationStandard
+} from '@/api/evaluation'
+
+export default {
+  name: 'StandardsView',
+  data() {
+    return {
+      loading: false,
+      importLoading: false,
+      downloadLoadingId: null,
+      queryForm: {
+        standardName: '',
+        dateRange: []
+      },
+      tableData: [],
+      currentPage: 1,
+      pageSize: 10,
+      total: 0,
+      importDialogVisible: false,
+      importForm: {
+        file: null,
+        fileName: ''
+      },
+      importRules: {
+        file: [{ required: true, message: '请上传标准文件', trigger: 'change' }]
+      },
+      previewDialogVisible: false,
+      previewUrl: '',
+      previewLoading: false,
+      previewError: '',
+      currentPreviewRow: null
+    }
+  },
+  created() {
+    this.loadStandardList()
+  },
+  methods: {
+    // 加载列表
+    async loadStandardList() {
+      this.loading = true
+      try {
+        const params = {
+          pageNum: this.currentPage,
+          pageSize: this.pageSize
+        }
+        if (this.queryForm.standardName) {
+          params.standardName = this.queryForm.standardName.trim()
+        }
+        if (this.queryForm.dateRange && this.queryForm.dateRange.length === 2) {
+          params.startTime = `${this.queryForm.dateRange[0]} 00:00:00`
+          params.endTime = `${this.queryForm.dateRange[1]} 23:59:59`
+        }
+        const res = await getEvaluationViewList(params)
+        if (res && (res.code === 200 || res.code === 0 || res.rows)) {
+          this.tableData = res.rows || res.data || []
+          this.total = res.total || 0
+        } else {
+          this.tableData = []
+          this.total = 0
+          this.$message.error(res && res.msg ? res.msg : '获取评价标准列表失败')
+        }
+      } catch (error) {
+        console.error('获取评价标准列表失败:', error)
+        this.$message.error('获取评价标准列表失败')
+        this.tableData = []
+      } finally {
+        this.loading = false
+      }
+    },
+    handleQuery() {
+      this.currentPage = 1
+      this.loadStandardList()
+    },
+    handleReset() {
+      this.queryForm = {
+        standardName: '',
+        dateRange: []
+      }
+      this.currentPage = 1
+      this.loadStandardList()
+    },
+    handleSizeChange(size) {
+      this.pageSize = size
+      this.currentPage = 1
+      this.loadStandardList()
+    },
+    handleCurrentChange(page) {
+      this.currentPage = page
+      this.loadStandardList()
+    },
+    formatType(row) {
+      return row.type || row.standardType || '--'
+    },
+    formatDate(dateStr) {
+      if (!dateStr) return '--'
+      return dateStr.length > 10 ? dateStr.slice(0, 10) : dateStr
+    },
+    formatDateTime(dateStr) {
+      if (!dateStr) return '--'
+      return dateStr.replace('T', ' ').slice(0, 19)
+    },
+    getFileName(row) {
+      if (!row) return '--'
+      if (row.fileName) return row.fileName
+      if (row.filePath) {
+        const segments = row.filePath.split('/')
+        return segments[segments.length - 1] || row.filePath
+      }
+      if (row.standardName) return `${row.standardName}.pdf`
+      return '标准文件'
+    },
+    getRowKey(row) {
+      if (row && row.id != null) return row.id
+      return row && row.standardName ? row.standardName : Math.random().toString(36).slice(2)
+    },
+    openImportDialog() {
+      this.importDialogVisible = true
+      this.$nextTick(() => {
+        this.$refs.importFormRef && this.$refs.importFormRef.clearValidate()
+      })
+    },
+    triggerFileSelect() {
+      if (this.$refs.fileInputRef) {
+        this.$refs.fileInputRef.click()
+      }
+    },
+    handleFileChange(event) {
+      const file = event.target.files && event.target.files[0]
+      if (!file) return
+      const allowTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ]
+      const isAllowed =
+        allowTypes.includes(file.type) ||
+        /\.pdf$|\.doc$|\.docx$/i.test(file.name)
+      const isLt10M = file.size / 1024 / 1024 <= 10
+      if (!isAllowed) {
+        this.$message.error('仅支持 Word 或 PDF 文件')
+        event.target.value = ''
+        return
+      }
+      if (!isLt10M) {
+        this.$message.error('上传文件大小不能超过 10MB')
+        event.target.value = ''
+        return
+      }
+      this.importForm.file = file
+      this.importForm.fileName = file.name
+      this.$refs.importFormRef && this.$refs.importFormRef.clearValidate('file')
+      event.target.value = ''
+    },
+    resetImportForm() {
+      this.importForm = {
+        file: null,
+        fileName: ''
+      }
+      this.$nextTick(() => {
+        this.$refs.importFormRef && this.$refs.importFormRef.clearValidate()
+      })
+    },
+    submitImport() {
+      this.$refs.importFormRef.validate(async valid => {
+        if (!valid) return
+        const formData = new FormData()
+        formData.append('file', this.importForm.file)
+        this.importLoading = true
+        try {
+          const res = await importEvaluationStandard(formData)
+          if (res && (res.code === 200 || res.code === 0)) {
+            this.$message.success('导入成功')
+            this.importDialogVisible = false
+            this.loadStandardList()
+          } else {
+            this.$message.error(res && res.msg ? res.msg : '导入失败')
+          }
+        } catch (error) {
+          console.error('导入评价标准文件失败:', error)
+          this.$message.error('导入失败，请稍后重试')
+        } finally {
+          this.importLoading = false
+        }
+      })
+    },
+    async handleDownload(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少文件ID，无法下载')
+        return
+      }
+      this.downloadLoadingId = row.id
+      try {
+        const response = await downloadEvaluationStandard(row.id)
+        const blob = new Blob([response])
+        const fileName = this.getFileName(row)
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('下载成功')
+      } catch (error) {
+        console.error('下载评价标准文件失败:', error)
+        this.$message.error('下载失败，请稍后再试')
+      } finally {
+        this.downloadLoadingId = null
+      }
+    },
+    // 预览文件
+    async handlePreview(row) {
+      if (!row || !row.id) {
+        this.$message.warning('缺少文件ID，无法预览')
+        return
+      }
+      this.currentPreviewRow = row
+      this.previewLoading = true
+      this.previewError = ''
+      this.previewDialogVisible = true
+      
+      try {
+        // 通过 API 获取文件流
+        const blob = await previewEvaluationStandard(row.id)
+        // 创建 blob URL 用于预览
+        this.previewUrl = window.URL.createObjectURL(blob)
+        this.previewLoading = false
+      } catch (error) {
+        console.error('预览文件失败:', error)
+        this.previewLoading = false
+        this.previewError = error.message || '文件预览失败，请检查文件格式或稍后重试'
+      }
+    },
+    // 预览加载完成
+    handlePreviewLoad() {
+      this.previewLoading = false
+      this.previewError = ''
+    },
+    // 预览加载错误
+    handlePreviewError() {
+      this.previewLoading = false
+      this.previewError = '文件预览失败，请检查文件格式或稍后重试'
+    },
+    // 关闭预览
+    handlePreviewClose() {
+      // 释放 blob URL 以释放内存
+      if (this.previewUrl && this.previewUrl.startsWith('blob:')) {
+        window.URL.revokeObjectURL(this.previewUrl)
+      }
+      this.previewUrl = ''
+      this.previewLoading = false
+      this.previewError = ''
+      this.currentPreviewRow = null
+      if (this.$refs.previewIframe) {
+        this.$refs.previewIframe.src = ''
+      }
+    },
+    // 重试预览
+    retryPreview() {
+      if (this.currentPreviewRow) {
+        this.handlePreview(this.currentPreviewRow)
+      }
+    },
+    // 从预览窗口下载
+    handleDownloadFromPreview() {
+      if (this.currentPreviewRow) {
+        this.previewDialogVisible = false
+        this.handleDownload(this.currentPreviewRow)
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.standards-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.filter-card {
+  padding-bottom: 0;
+}
+
+.filter-form .el-form-item {
+  margin-right: 24px;
+  margin-bottom: 12px;
+}
+
+.table-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toolbar-right {
+  color: #909399;
+  font-size: 14px;
+}
+
+.table-pagination {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+
+.file-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.upload-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.preview-container {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  position: relative;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.preview-loading,
+.preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #909399;
+}
+
+.preview-loading i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: rotating 2s linear infinite;
+}
+
+.preview-error i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #f56c6c;
+}
+
+.preview-loading p,
+.preview-error p {
+  margin: 8px 0 16px;
+  font-size: 14px;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>

@@ -1,0 +1,2162 @@
+[
+  {
+      "coordinates": [
+          118.46257179966194,
+          48.0082355589553
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1000",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "21°C",
+              "turbidity": "26NTU",
+              "ph": "7.7",
+              "dissolvedOxygen": "3.54mg/L",
+              "conductivity": "68.0uS/cm",
+              "chlorophyllA": "4.8mg/L",
+              "cyanobacteria": "0.003µg/L",
+              "permanganateIndex": {
+                  "value": "2.858mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.159mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.186mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "6.4mg/L",
+              "totalIron": "0.68mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.86906150406274,
+          49.33613316293034
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1001",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "23°C",
+              "turbidity": "12NTU",
+              "ph": "8.3",
+              "dissolvedOxygen": "2.70mg/L",
+              "conductivity": "102.3uS/cm",
+              "chlorophyllA": "3.6mg/L",
+              "cyanobacteria": "0.005µg/L",
+              "permanganateIndex": {
+                  "value": "1.387mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.101mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.188mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "6.4mg/L",
+              "totalIron": "0.20mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          117.73145738269601,
+          49.619924685173
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1002",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "22°C",
+              "turbidity": "7NTU",
+              "ph": "8.2",
+              "dissolvedOxygen": "2.80mg/L",
+              "conductivity": "214.8uS/cm",
+              "chlorophyllA": "1.1mg/L",
+              "cyanobacteria": "0.042µg/L",
+              "permanganateIndex": {
+                  "value": "3.458mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.069mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.135mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "4.8mg/L",
+              "totalIron": "0.92mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          117.70359892754541,
+          48.561272917455035
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1003",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "10°C",
+              "turbidity": "13NTU",
+              "ph": "8.4",
+              "dissolvedOxygen": "3.19mg/L",
+              "conductivity": "287.7uS/cm",
+              "chlorophyllA": "0.4mg/L",
+              "cyanobacteria": "0.022µg/L",
+              "permanganateIndex": {
+                  "value": "1.823mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.082mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.264mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "7.0mg/L",
+              "totalIron": "0.71mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.74541858425137,
+          47.97634205734491
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1004",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "12°C",
+              "turbidity": "9NTU",
+              "ph": "7.0",
+              "dissolvedOxygen": "5.25mg/L",
+              "conductivity": "108.1uS/cm",
+              "chlorophyllA": "0.3mg/L",
+              "cyanobacteria": "0.008µg/L",
+              "permanganateIndex": {
+                  "value": "1.303mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.115mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.125mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "0.9mg/L",
+              "totalIron": "0.40mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.90523345652338,
+          49.61431454736178
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1005",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "11°C",
+              "turbidity": "8NTU",
+              "ph": "7.1",
+              "dissolvedOxygen": "4.26mg/L",
+              "conductivity": "93.7uS/cm",
+              "chlorophyllA": "4.2mg/L",
+              "cyanobacteria": "0.020µg/L",
+              "permanganateIndex": {
+                  "value": "3.432mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.123mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.372mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "5.2mg/L",
+              "totalIron": "0.20mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.33664170675593,
+          48.83324714417036
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1006",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "11°C",
+              "turbidity": "27NTU",
+              "ph": "7.1",
+              "dissolvedOxygen": "2.79mg/L",
+              "conductivity": "235.7uS/cm",
+              "chlorophyllA": "4.5mg/L",
+              "cyanobacteria": "0.027µg/L",
+              "permanganateIndex": {
+                  "value": "2.011mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.049mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.114mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "3.7mg/L",
+              "totalIron": "0.82mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.34103342680632,
+          48.96080688453014
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1007",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "12NTU",
+              "ph": "6.8",
+              "dissolvedOxygen": "0.84mg/L",
+              "conductivity": "48.8uS/cm",
+              "chlorophyllA": "3.4mg/L",
+              "cyanobacteria": "0.042µg/L",
+              "permanganateIndex": {
+                  "value": "0.946mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.060mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.147mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "1.8mg/L",
+              "totalIron": "0.75mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.03306716510805,
+          48.15894198587268
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1008",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "19°C",
+              "turbidity": "20NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "3.94mg/L",
+              "conductivity": "285.7uS/cm",
+              "chlorophyllA": "2.7mg/L",
+              "cyanobacteria": "0.043µg/L",
+              "permanganateIndex": {
+                  "value": "0.814mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.108mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.224mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "4.0mg/L",
+              "totalIron": "0.96mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.35530772295948,
+          49.690241363773566
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1009",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "25°C",
+              "turbidity": "5NTU",
+              "ph": "8.1",
+              "dissolvedOxygen": "3.63mg/L",
+              "conductivity": "99.9uS/cm",
+              "chlorophyllA": "1.8mg/L",
+              "cyanobacteria": "0.005µg/L",
+              "permanganateIndex": {
+                  "value": "3.489mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.024mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.475mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "7.0mg/L",
+              "totalIron": "0.64mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.21950401077459,
+          49.30548867608566
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1010",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "8°C",
+              "turbidity": "22NTU",
+              "ph": "7.1",
+              "dissolvedOxygen": "7.41mg/L",
+              "conductivity": "261.6uS/cm",
+              "chlorophyllA": "1.7mg/L",
+              "cyanobacteria": "0.001µg/L",
+              "permanganateIndex": {
+                  "value": "3.199mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.053mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.167mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "3.4mg/L",
+              "totalIron": "0.21mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.03298723534397,
+          50.226117828999904
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1011",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "10°C",
+              "turbidity": "7NTU",
+              "ph": "8.2",
+              "dissolvedOxygen": "4.13mg/L",
+              "conductivity": "143.3uS/cm",
+              "chlorophyllA": "4.6mg/L",
+              "cyanobacteria": "0.025µg/L",
+              "permanganateIndex": {
+                  "value": "3.203mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.036mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.371mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "0.4mg/L",
+              "totalIron": "0.55mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.06138191905589,
+          48.831372462164325
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1012",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "16°C",
+              "turbidity": "10NTU",
+              "ph": "6.7",
+              "dissolvedOxygen": "5.70mg/L",
+              "conductivity": "276.8uS/cm",
+              "chlorophyllA": "4.0mg/L",
+              "cyanobacteria": "0.005µg/L",
+              "permanganateIndex": {
+                  "value": "0.915mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.182mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.406mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "2.4mg/L",
+              "totalIron": "0.90mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.24809296683823,
+          50.67997891004409
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1013",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "1NTU",
+              "ph": "7.8",
+              "dissolvedOxygen": "1.57mg/L",
+              "conductivity": "173.7uS/cm",
+              "chlorophyllA": "4.0mg/L",
+              "cyanobacteria": "0.001µg/L",
+              "permanganateIndex": {
+                  "value": "2.644mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.145mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.201mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "4.9mg/L",
+              "totalIron": "0.21mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.69236000065548,
+          47.79914065494983
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1014",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "15°C",
+              "turbidity": "3NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "7.91mg/L",
+              "conductivity": "130.6uS/cm",
+              "chlorophyllA": "1.1mg/L",
+              "cyanobacteria": "0.003µg/L",
+              "permanganateIndex": {
+                  "value": "3.357mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.132mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.294mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "5.3mg/L",
+              "totalIron": "0.90mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.97502909358064,
+          48.13798714746276
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1015",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "7NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "7.87mg/L",
+              "conductivity": "205.1uS/cm",
+              "chlorophyllA": "4.7mg/L",
+              "cyanobacteria": "0.033µg/L",
+              "permanganateIndex": {
+                  "value": "3.214mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.103mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.131mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "7.7mg/L",
+              "totalIron": "0.08mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          117.8760344305974,
+          49.312997727194336
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1016",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "2NTU",
+              "ph": "8.3",
+              "dissolvedOxygen": "8.19mg/L",
+              "conductivity": "19.2uS/cm",
+              "chlorophyllA": "4.6mg/L",
+              "cyanobacteria": "0.043µg/L",
+              "permanganateIndex": {
+                  "value": "1.852mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.066mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.099mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "6.5mg/L",
+              "totalIron": "0.25mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.48471817693499,
+          49.60832382063006
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1017",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "20°C",
+              "turbidity": "24NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "0.13mg/L",
+              "conductivity": "8.7uS/cm",
+              "chlorophyllA": "4.6mg/L",
+              "cyanobacteria": "0.048µg/L",
+              "permanganateIndex": {
+                  "value": "2.086mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.026mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.220mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "7.3mg/L",
+              "totalIron": "0.21mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.0058803629015,
+          50.32067293447773
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1018",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "22°C",
+              "turbidity": "16NTU",
+              "ph": "8.5",
+              "dissolvedOxygen": "8.73mg/L",
+              "conductivity": "20.0uS/cm",
+              "chlorophyllA": "0.2mg/L",
+              "cyanobacteria": "0.040µg/L",
+              "permanganateIndex": {
+                  "value": "2.355mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.186mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.363mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "7.0mg/L",
+              "totalIron": "0.63mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.04615488964465,
+          48.724244735189565
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1019",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "8NTU",
+              "ph": "6.8",
+              "dissolvedOxygen": "2.62mg/L",
+              "conductivity": "178.2uS/cm",
+              "chlorophyllA": "3.5mg/L",
+              "cyanobacteria": "0.025µg/L",
+              "permanganateIndex": {
+                  "value": "2.509mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.074mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.067mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "6.2mg/L",
+              "totalIron": "0.73mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.18132356574819,
+          50.40960386773155
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1020",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "20°C",
+              "turbidity": "18NTU",
+              "ph": "6.7",
+              "dissolvedOxygen": "0.36mg/L",
+              "conductivity": "120.7uS/cm",
+              "chlorophyllA": "3.1mg/L",
+              "cyanobacteria": "0.012µg/L",
+              "permanganateIndex": {
+                  "value": "3.097mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.077mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.075mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "2.0mg/L",
+              "totalIron": "0.46mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.12873539929399,
+          48.003257140046436
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1021",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "22°C",
+              "turbidity": "18NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "6.43mg/L",
+              "conductivity": "60.1uS/cm",
+              "chlorophyllA": "1.7mg/L",
+              "cyanobacteria": "0.018µg/L",
+              "permanganateIndex": {
+                  "value": "3.143mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.181mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.377mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "3.2mg/L",
+              "totalIron": "0.21mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.60498628832167,
+          49.19578139624673
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1022",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "15°C",
+              "turbidity": "8NTU",
+              "ph": "6.6",
+              "dissolvedOxygen": "2.00mg/L",
+              "conductivity": "135.6uS/cm",
+              "chlorophyllA": "2.1mg/L",
+              "cyanobacteria": "0.016µg/L",
+              "permanganateIndex": {
+                  "value": "0.676mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.154mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.098mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "1.0mg/L",
+              "totalIron": "0.74mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.96394247831844,
+          48.3499844905438
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1023",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "11°C",
+              "turbidity": "8NTU",
+              "ph": "7.8",
+              "dissolvedOxygen": "1.04mg/L",
+              "conductivity": "171.7uS/cm",
+              "chlorophyllA": "2.0mg/L",
+              "cyanobacteria": "0.008µg/L",
+              "permanganateIndex": {
+                  "value": "0.712mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.096mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.429mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "3.2mg/L",
+              "totalIron": "0.22mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.22445265241306,
+          49.207349629879275
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1024",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "27°C",
+              "turbidity": "15NTU",
+              "ph": "8.2",
+              "dissolvedOxygen": "7.89mg/L",
+              "conductivity": "95.3uS/cm",
+              "chlorophyllA": "2.4mg/L",
+              "cyanobacteria": "0.011µg/L",
+              "permanganateIndex": {
+                  "value": "2.372mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.166mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.095mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "2.3mg/L",
+              "totalIron": "0.17mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.84368804075051,
+          48.90078118878095
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1025",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "11°C",
+              "turbidity": "24NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "1.63mg/L",
+              "conductivity": "24.6uS/cm",
+              "chlorophyllA": "1.8mg/L",
+              "cyanobacteria": "0.049µg/L",
+              "permanganateIndex": {
+                  "value": "0.991mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.101mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.077mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "2.2mg/L",
+              "totalIron": "0.66mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.6451537762838,
+          49.402222666074756
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1026",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "1NTU",
+              "ph": "7.4",
+              "dissolvedOxygen": "0.30mg/L",
+              "conductivity": "105.6uS/cm",
+              "chlorophyllA": "2.3mg/L",
+              "cyanobacteria": "0.029µg/L",
+              "permanganateIndex": {
+                  "value": "3.336mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.067mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.166mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "2.5mg/L",
+              "totalIron": "0.73mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.97285227145905,
+          50.46662959229951
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1027",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "13NTU",
+              "ph": "8.0",
+              "dissolvedOxygen": "1.37mg/L",
+              "conductivity": "200.3uS/cm",
+              "chlorophyllA": "0.4mg/L",
+              "cyanobacteria": "0.047µg/L",
+              "permanganateIndex": {
+                  "value": "0.999mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.146mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.222mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "5.5mg/L",
+              "totalIron": "0.92mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.65747457966472,
+          50.58801987737341
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1028",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "24°C",
+              "turbidity": "20NTU",
+              "ph": "7.7",
+              "dissolvedOxygen": "0.90mg/L",
+              "conductivity": "123.0uS/cm",
+              "chlorophyllA": "4.9mg/L",
+              "cyanobacteria": "0.046µg/L",
+              "permanganateIndex": {
+                  "value": "0.504mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.057mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.111mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "2.9mg/L",
+              "totalIron": "0.79mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.0232847585294,
+          49.73357103349004
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1029",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "13°C",
+              "turbidity": "3NTU",
+              "ph": "7.2",
+              "dissolvedOxygen": "6.36mg/L",
+              "conductivity": "277.2uS/cm",
+              "chlorophyllA": "3.8mg/L",
+              "cyanobacteria": "0.039µg/L",
+              "permanganateIndex": {
+                  "value": "1.401mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.131mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.254mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "1.2mg/L",
+              "totalIron": "0.07mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.5011000910836,
+          49.19058036409921
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1030",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "17°C",
+              "turbidity": "11NTU",
+              "ph": "7.6",
+              "dissolvedOxygen": "4.90mg/L",
+              "conductivity": "20.7uS/cm",
+              "chlorophyllA": "2.8mg/L",
+              "cyanobacteria": "0.043µg/L",
+              "permanganateIndex": {
+                  "value": "2.110mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.091mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.360mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "2.5mg/L",
+              "totalIron": "0.28mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.73965984136865,
+          50.09270110229736
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1031",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "22°C",
+              "turbidity": "25NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "3.24mg/L",
+              "conductivity": "180.3uS/cm",
+              "chlorophyllA": "4.0mg/L",
+              "cyanobacteria": "0.013µg/L",
+              "permanganateIndex": {
+                  "value": "3.255mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.090mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.148mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "2.9mg/L",
+              "totalIron": "0.08mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.21394435886114,
+          48.604904514916825
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1032",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "25NTU",
+              "ph": "7.3",
+              "dissolvedOxygen": "2.59mg/L",
+              "conductivity": "272.7uS/cm",
+              "chlorophyllA": "0.4mg/L",
+              "cyanobacteria": "0.044µg/L",
+              "permanganateIndex": {
+                  "value": "2.370mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.141mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.154mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "5.9mg/L",
+              "totalIron": "0.92mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.21510438770967,
+          49.481191748977174
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1033",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "8°C",
+              "turbidity": "16NTU",
+              "ph": "7.0",
+              "dissolvedOxygen": "8.69mg/L",
+              "conductivity": "9.1uS/cm",
+              "chlorophyllA": "2.8mg/L",
+              "cyanobacteria": "0.035µg/L",
+              "permanganateIndex": {
+                  "value": "2.537mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.027mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.358mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "6.2mg/L",
+              "totalIron": "0.86mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.6345859962497,
+          50.41558992037763
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1034",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "21°C",
+              "turbidity": "25NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "5.39mg/L",
+              "conductivity": "201.1uS/cm",
+              "chlorophyllA": "4.6mg/L",
+              "cyanobacteria": "0.043µg/L",
+              "permanganateIndex": {
+                  "value": "3.481mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.078mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.359mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "6.9mg/L",
+              "totalIron": "0.26mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.8759502403424,
+          49.86534949025924
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1035",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "27°C",
+              "turbidity": "11NTU",
+              "ph": "8.3",
+              "dissolvedOxygen": "6.52mg/L",
+              "conductivity": "29.3uS/cm",
+              "chlorophyllA": "2.4mg/L",
+              "cyanobacteria": "0.020µg/L",
+              "permanganateIndex": {
+                  "value": "0.707mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.200mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.319mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "6.4mg/L",
+              "totalIron": "0.78mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          117.87038489798182,
+          50.69363643856723
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1036",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "23°C",
+              "turbidity": "17NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "0.56mg/L",
+              "conductivity": "159.5uS/cm",
+              "chlorophyllA": "4.9mg/L",
+              "cyanobacteria": "0.041µg/L",
+              "permanganateIndex": {
+                  "value": "2.157mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.066mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.285mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "7.6mg/L",
+              "totalIron": "0.48mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.05217051166773,
+          48.06046993133446
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1037",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "26NTU",
+              "ph": "6.7",
+              "dissolvedOxygen": "8.62mg/L",
+              "conductivity": "110.8uS/cm",
+              "chlorophyllA": "4.4mg/L",
+              "cyanobacteria": "0.030µg/L",
+              "permanganateIndex": {
+                  "value": "1.507mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.117mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.162mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "4.2mg/L",
+              "totalIron": "0.24mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.8024353296192,
+          49.27239333941976
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1038",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "26°C",
+              "turbidity": "11NTU",
+              "ph": "8.4",
+              "dissolvedOxygen": "1.55mg/L",
+              "conductivity": "274.9uS/cm",
+              "chlorophyllA": "1.3mg/L",
+              "cyanobacteria": "0.049µg/L",
+              "permanganateIndex": {
+                  "value": "3.094mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.119mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.497mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "5.6mg/L",
+              "totalIron": "0.05mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.55939348989446,
+          49.915160175904404
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1039",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "26°C",
+              "turbidity": "23NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "2.98mg/L",
+              "conductivity": "78.0uS/cm",
+              "chlorophyllA": "4.8mg/L",
+              "cyanobacteria": "0.009µg/L",
+              "permanganateIndex": {
+                  "value": "3.140mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.025mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.130mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "0.5mg/L",
+              "totalIron": "0.73mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.86068657897218,
+          49.84872346071211
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1040",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "27NTU",
+              "ph": "7.2",
+              "dissolvedOxygen": "3.81mg/L",
+              "conductivity": "55.2uS/cm",
+              "chlorophyllA": "1.3mg/L",
+              "cyanobacteria": "0.048µg/L",
+              "permanganateIndex": {
+                  "value": "1.180mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.094mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.197mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "6.1mg/L",
+              "totalIron": "0.08mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.23293744581943,
+          49.180102330059306
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1041",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "3NTU",
+              "ph": "8.0",
+              "dissolvedOxygen": "8.19mg/L",
+              "conductivity": "259.3uS/cm",
+              "chlorophyllA": "4.3mg/L",
+              "cyanobacteria": "0.043µg/L",
+              "permanganateIndex": {
+                  "value": "0.714mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.020mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.352mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "5.7mg/L",
+              "totalIron": "0.99mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.55351740054057,
+          48.27603307938235
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1042",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "14°C",
+              "turbidity": "17NTU",
+              "ph": "7.5",
+              "dissolvedOxygen": "1.35mg/L",
+              "conductivity": "175.6uS/cm",
+              "chlorophyllA": "3.8mg/L",
+              "cyanobacteria": "0.048µg/L",
+              "permanganateIndex": {
+                  "value": "1.140mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.042mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.085mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "4.2mg/L",
+              "totalIron": "0.12mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.03501149311509,
+          48.61143672127837
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1043",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "16°C",
+              "turbidity": "24NTU",
+              "ph": "7.0",
+              "dissolvedOxygen": "5.10mg/L",
+              "conductivity": "24.5uS/cm",
+              "chlorophyllA": "2.6mg/L",
+              "cyanobacteria": "0.007µg/L",
+              "permanganateIndex": {
+                  "value": "2.365mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.126mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.428mg/L",
+                  "class": "II类"
+              },
+              "totalNitrogen": "0.7mg/L",
+              "totalIron": "0.59mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          117.71642589936197,
+          48.93388408692282
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1044",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "25°C",
+              "turbidity": "9NTU",
+              "ph": "7.7",
+              "dissolvedOxygen": "3.42mg/L",
+              "conductivity": "251.8uS/cm",
+              "chlorophyllA": "3.0mg/L",
+              "cyanobacteria": "0.048µg/L",
+              "permanganateIndex": {
+                  "value": "0.648mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.112mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.217mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "5.8mg/L",
+              "totalIron": "0.96mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.66084499020648,
+          48.89328553051924
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1045",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "5°C",
+              "turbidity": "15NTU",
+              "ph": "7.2",
+              "dissolvedOxygen": "5.36mg/L",
+              "conductivity": "54.9uS/cm",
+              "chlorophyllA": "3.2mg/L",
+              "cyanobacteria": "0.033µg/L",
+              "permanganateIndex": {
+                  "value": "2.969mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.136mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.372mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "0.5mg/L",
+              "totalIron": "0.15mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.92552029404182,
+          49.69601982912791
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1046",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "16°C",
+              "turbidity": "9NTU",
+              "ph": "7.0",
+              "dissolvedOxygen": "3.76mg/L",
+              "conductivity": "97.8uS/cm",
+              "chlorophyllA": "4.8mg/L",
+              "cyanobacteria": "0.030µg/L",
+              "permanganateIndex": {
+                  "value": "2.138mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.059mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.066mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "6.6mg/L",
+              "totalIron": "0.23mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.14094240593978,
+          48.0091799292605
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1047",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "21°C",
+              "turbidity": "4NTU",
+              "ph": "7.2",
+              "dissolvedOxygen": "0.92mg/L",
+              "conductivity": "111.1uS/cm",
+              "chlorophyllA": "0.9mg/L",
+              "cyanobacteria": "0.030µg/L",
+              "permanganateIndex": {
+                  "value": "2.339mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.200mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.178mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "4.4mg/L",
+              "totalIron": "0.85mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.89343846562299,
+          49.258433109203054
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1048",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "6°C",
+              "turbidity": "12NTU",
+              "ph": "7.3",
+              "dissolvedOxygen": "4.07mg/L",
+              "conductivity": "160.0uS/cm",
+              "chlorophyllA": "4.0mg/L",
+              "cyanobacteria": "0.005µg/L",
+              "permanganateIndex": {
+                  "value": "2.940mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.155mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.066mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "4.3mg/L",
+              "totalIron": "0.79mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.48780637423502,
+          50.12294203569522
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1049",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "25°C",
+              "turbidity": "4NTU",
+              "ph": "6.6",
+              "dissolvedOxygen": "1.58mg/L",
+              "conductivity": "46.0uS/cm",
+              "chlorophyllA": "4.3mg/L",
+              "cyanobacteria": "0.040µg/L",
+              "permanganateIndex": {
+                  "value": "1.871mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.115mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.331mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "1.4mg/L",
+              "totalIron": "0.66mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.41631952723078,
+          49.79724229020198
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1050",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "16°C",
+              "turbidity": "23NTU",
+              "ph": "7.9",
+              "dissolvedOxygen": "1.67mg/L",
+              "conductivity": "50.9uS/cm",
+              "chlorophyllA": "3.4mg/L",
+              "cyanobacteria": "0.031µg/L",
+              "permanganateIndex": {
+                  "value": "3.268mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.041mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.189mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "6.0mg/L",
+              "totalIron": "0.29mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.08406615737906,
+          48.90040217271082
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1051",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "26°C",
+              "turbidity": "25NTU",
+              "ph": "7.4",
+              "dissolvedOxygen": "2.75mg/L",
+              "conductivity": "180.1uS/cm",
+              "chlorophyllA": "4.0mg/L",
+              "cyanobacteria": "0.009µg/L",
+              "permanganateIndex": {
+                  "value": "1.166mg/L",
+                  "class": "I类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.090mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.415mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "1.2mg/L",
+              "totalIron": "0.21mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          118.82799286311234,
+          50.02180618464141
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1052",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "24°C",
+              "turbidity": "6NTU",
+              "ph": "8.0",
+              "dissolvedOxygen": "4.44mg/L",
+              "conductivity": "102.2uS/cm",
+              "chlorophyllA": "2.5mg/L",
+              "cyanobacteria": "0.036µg/L",
+              "permanganateIndex": {
+                  "value": "2.332mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.147mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.349mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "2.3mg/L",
+              "totalIron": "0.37mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.02057536016635,
+          47.801035610049716
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1053",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "21°C",
+              "turbidity": "7NTU",
+              "ph": "8.3",
+              "dissolvedOxygen": "1.32mg/L",
+              "conductivity": "155.7uS/cm",
+              "chlorophyllA": "0.9mg/L",
+              "cyanobacteria": "0.007µg/L",
+              "permanganateIndex": {
+                  "value": "1.777mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.070mg/L",
+                  "class": "I类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.146mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "3.4mg/L",
+              "totalIron": "0.91mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.26800552344766,
+          48.968035010116175
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1054",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "IV类",
+          "metrics": {
+              "waterTemp": "6°C",
+              "turbidity": "5NTU",
+              "ph": "7.4",
+              "dissolvedOxygen": "3.34mg/L",
+              "conductivity": "281.7uS/cm",
+              "chlorophyllA": "2.8mg/L",
+              "cyanobacteria": "0.007µg/L",
+              "permanganateIndex": {
+                  "value": "0.662mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.084mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.333mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "3.5mg/L",
+              "totalIron": "0.68mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.17565513411252,
+          48.71663594015727
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1055",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "12°C",
+              "turbidity": "5NTU",
+              "ph": "7.1",
+              "dissolvedOxygen": "2.78mg/L",
+              "conductivity": "250.0uS/cm",
+              "chlorophyllA": "1.5mg/L",
+              "cyanobacteria": "0.010µg/L",
+              "permanganateIndex": {
+                  "value": "1.232mg/L",
+                  "class": "IV类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.050mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.202mg/L",
+                  "class": "IV类"
+              },
+              "totalNitrogen": "3.9mg/L",
+              "totalIron": "0.84mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          121.4578718023901,
+          50.1468330003747
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1056",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "9°C",
+              "turbidity": "11NTU",
+              "ph": "7.6",
+              "dissolvedOxygen": "4.72mg/L",
+              "conductivity": "217.6uS/cm",
+              "chlorophyllA": "3.2mg/L",
+              "cyanobacteria": "0.014µg/L",
+              "permanganateIndex": {
+                  "value": "1.216mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.145mg/L",
+                  "class": "III类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.145mg/L",
+                  "class": "I类"
+              },
+              "totalNitrogen": "4.0mg/L",
+              "totalIron": "0.80mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          120.31177067131983,
+          50.25020703533311
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1057",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "III类",
+          "metrics": {
+              "waterTemp": "28°C",
+              "turbidity": "6NTU",
+              "ph": "6.9",
+              "dissolvedOxygen": "7.50mg/L",
+              "conductivity": "118.9uS/cm",
+              "chlorophyllA": "4.3mg/L",
+              "cyanobacteria": "0.040µg/L",
+              "permanganateIndex": {
+                  "value": "1.179mg/L",
+                  "class": "II类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.088mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.220mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "0.6mg/L",
+              "totalIron": "0.51mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.23290751927472,
+          47.808359836933526
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1058",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "I类",
+          "metrics": {
+              "waterTemp": "10°C",
+              "turbidity": "17NTU",
+              "ph": "6.6",
+              "dissolvedOxygen": "8.24mg/L",
+              "conductivity": "197.6uS/cm",
+              "chlorophyllA": "1.1mg/L",
+              "cyanobacteria": "0.010µg/L",
+              "permanganateIndex": {
+                  "value": "1.127mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.152mg/L",
+                  "class": "IV类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.459mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "4.7mg/L",
+              "totalIron": "0.65mg/L"
+          }
+      }
+  },
+  {
+      "coordinates": [
+          119.34486615758982,
+          49.60804889704552
+      ],
+      "properties": {
+          "popupType": "comprehensive",
+          "projectName": "",
+          "wellCode": "WELL-1059",
+          "measureTime": "2025-10-20 17:48",
+          "overallClass": "II类",
+          "metrics": {
+              "waterTemp": "17°C",
+              "turbidity": "12NTU",
+              "ph": "7.1",
+              "dissolvedOxygen": "6.95mg/L",
+              "conductivity": "47.3uS/cm",
+              "chlorophyllA": "2.9mg/L",
+              "cyanobacteria": "0.017µg/L",
+              "permanganateIndex": {
+                  "value": "1.598mg/L",
+                  "class": "III类"
+              },
+              "totalPhosphorus": {
+                  "value": "0.120mg/L",
+                  "class": "II类"
+              },
+              "ammoniaNitrogen": {
+                  "value": "0.462mg/L",
+                  "class": "III类"
+              },
+              "totalNitrogen": "6.3mg/L",
+              "totalIron": "0.58mg/L"
+          }
+      }
+  }
+]

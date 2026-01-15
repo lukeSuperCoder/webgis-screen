@@ -1,0 +1,435 @@
+// shapeType 码表：
+// 0: circle（圆形）
+// 1: rect（矩形）
+// 2: triangle（三角形）
+// 3: star（五角星）
+// 4: pentagon（五边形）
+// 5: hexagon（六边形）
+// 6: heptagon（七边形）
+// 7: octagon（八边形）
+// 8: nonagon（九边形）
+// 9: decagon（十边形）
+// 10: cross（十字）
+// 11: x（叉形）
+// 12: diamond（菱形）
+// 13: plus（加号）
+// 14: star6（六角星）
+// 15: star7（七角星）
+// 16: star8（八角星）
+// 17: star9（九角星）
+// 18: star10（十角星）
+// 19: ellipse（椭圆）
+// 20: custom（自定义，预留）
+// 21: circle with plus（圆形里面带加号）
+
+import { Feature } from 'ol';
+import { Point } from 'ol/geom';
+import { Vector as VectorLayer } from 'ol/layer';
+import { Vector as VectorSource } from 'ol/source';
+import { Style, Icon, Stroke, Fill, Circle, RegularShape } from 'ol/style';
+import { fromLonLat,toLonLat } from 'ol/proj';
+
+class MarkerLayer {
+  constructor(mapInstance, options) {
+    this.map = mapInstance;
+    this.options = {
+      // 默认配置
+      defaultStyle: new Style({
+        image: new Circle({
+          radius: 6,
+          fill: new Fill({
+            color: '#FF0000'
+          }),
+          stroke: new Stroke({
+            color: '#FFFFFF',
+            width: 2
+          })
+        })
+      }),
+      // 自定义图标配置
+      iconStyle: null,
+      // 是否显示标签
+      showLabel: false,
+      // 标签样式
+      labelStyle: {
+        text: '',
+        font: '14px Microsoft YaHei',
+        fill: new Fill({
+          color: '#000000'
+        }),
+        stroke: new Stroke({
+          color: '#FFFFFF',
+          width: 2
+        }),
+        offsetY: -20
+      },
+      // 点击回调函数
+      onClick: null
+    };
+    this.options = Object.assign(this.options, options);
+
+    // 创建矢量图层
+    this.vectorSource = new VectorSource();
+    this.vectorLayer = new VectorLayer({
+      source: this.vectorSource,
+      zIndex: 10
+    });
+
+    // 将图层添加到地图
+    this.map.addLayer(this.vectorLayer);
+
+    // 绑定点击事件
+    this.map.on('click', this._handleClick.bind(this));
+  }
+
+  /**
+   * 处理点击事件
+   * @private
+   */
+  _handleClick(event) {
+    // 使用 hitTolerance 增加点击检测范围，并指定图层过滤
+    const feature = this.map.forEachFeatureAtPixel(
+      event.pixel,
+      (feature) => {
+        // 只检测当前图层的 feature
+        const featureLayer = feature.get('layer');
+        if (featureLayer === this.vectorLayer || !featureLayer) {
+          return feature;
+        }
+        return null;
+      },
+      {
+        hitTolerance: 5,
+        layerFilter: (layer) => {
+          // 只检测当前图层的 feature
+          return layer === this.vectorLayer;
+        }
+      }
+    );
+
+    if (feature) {
+      const allProperties = feature.getProperties();
+      // 过滤掉 geometry 和 layer 属性，只保留自定义属性
+      const properties = {};
+      Object.keys(allProperties).forEach(key => {
+        if (key !== 'geometry' && key !== 'layer') {
+          properties[key] = allProperties[key];
+        }
+      });
+
+      const featureData = {
+        type: 'marker',
+        properties: properties,
+        geometry: toLonLat(feature.getGeometry().getCoordinates())
+      };
+      
+      console.log('MarkerLayer _handleClick - featureData:', featureData);
+      console.log('MarkerLayer _handleClick - allProperties:', allProperties);
+      
+      // 调用回调函数
+      if (typeof this.options.onClick === 'function') {
+        this.options.onClick(featureData, event);
+      } else {
+        console.warn('MarkerLayer onClick callback is not set');
+      }
+    } else {
+      console.log('MarkerLayer _handleClick - no feature found at pixel:', event.pixel);
+      console.log('MarkerLayer _handleClick - vectorLayer:', this.vectorLayer);
+      console.log('MarkerLayer _handleClick - vectorSource features count:', this.vectorSource.getFeatures().length);
+    }
+  }
+
+  /**
+   * 设置点击回调函数
+   * @param {Function} callback 回调函数
+   */
+  setOnClick(callback) {
+    this.options.onClick = callback;
+  }
+
+  /**
+   * 销毁图层
+   */
+  destroy() {
+    // 移除点击事件
+    this.map.un('click', this._handleClick.bind(this));
+    // 移除图层
+    this.map.removeLayer(this.vectorLayer);
+    // 清除数据源
+    this.vectorSource.clear();
+  }
+
+  /**
+   * 添加单个点位
+   * @param {Object} point 点位信息
+   * @param {Array} point.coordinates 坐标 [经度, 纬度]
+   * @param {Object} point.properties 点位属性
+   * @param {Object} point.style 自定义样式
+   */
+  addMarker(point) {
+    const feature = this._createFeature(point);
+    this.vectorSource.addFeature(feature);
+    return feature;
+  }
+
+  /**
+   * 添加多个点位
+   * @param {Array} points 点位数组
+   */
+  addMarkers(points) {
+    if (!points || points.length === 0) {
+      console.warn('MarkerLayer.addMarkers - points is empty');
+      return [];
+    }
+    
+    console.log('MarkerLayer.addMarkers - points count:', points.length);
+    console.log('MarkerLayer.addMarkers - sample point:', points[0]);
+    
+    const features = points.map(point => {
+      try {
+        return this._createFeature(point);
+      } catch (error) {
+        console.error('MarkerLayer.addMarkers - error creating feature:', error, point);
+        return null;
+      }
+    }).filter(f => f !== null);
+    
+    console.log('MarkerLayer.addMarkers - created features count:', features.length);
+    console.log('MarkerLayer.addMarkers - before addFeatures, source features count:', this.vectorSource.getFeatures().length);
+    
+    this.vectorSource.addFeatures(features);
+    
+    console.log('MarkerLayer.addMarkers - after addFeatures, source features count:', this.vectorSource.getFeatures().length);
+    
+    return features;
+  }
+
+  /**
+   * 创建要素
+   * @private
+   */
+  _createFeature(point) {
+    const { coordinates, properties = {}, style } = point;
+    const feature = new Feature({
+      geometry: new Point(fromLonLat(coordinates)),
+      ...properties
+    });
+
+    // 设置样式
+    if (style && style.iconUrl) {
+      // 如果有iconUrl，优先用图标
+      feature.setStyle(new Style({
+        image: new Icon({
+          src: style.iconUrl,
+          scale: style.iconScale || 1,
+          anchor: style.iconAnchor || [0.5, 1],
+          anchorXUnits: 'fraction',
+          anchorYUnits: 'fraction'
+        })
+      }));
+    } else if (style) {
+      feature.setStyle(this._createStyle(style));
+    } else if (this.options.iconStyle) {
+      feature.setStyle(this._createIconStyle(this.options.iconStyle));
+    } else {
+      feature.setStyle(this.options.defaultStyle);
+    }
+
+    return feature;
+  }
+
+  /**
+   * 创建自定义图标样式
+   * @private
+   */
+  _createIconStyle(iconConfig) {
+    return new Style({
+      image: new Icon({
+        src: iconConfig.src,
+        scale: iconConfig.scale || 1,
+        anchor: iconConfig.anchor || [0.5, 1],
+        anchorXUnits: 'fraction',
+        anchorYUnits: 'fraction'
+      })
+    });
+  }
+
+  /**
+   * 创建圆形里面带加号的样式
+   * @private
+   */
+  _createCirclePlusStyle(radius, fillColor, stroke) {
+    // 使用Canvas创建复合形状
+    const canvas = document.createElement('canvas');
+    const size = (radius + (stroke ? stroke.getWidth() : 0)) * 2 + 4;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    const centerX = size / 2;
+    const centerY = size / 2;
+    
+    // 绘制圆形
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    
+    // 填充圆形
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    
+    // 绘制圆形边框
+    if (stroke) {
+      ctx.strokeStyle = stroke.getColor();
+      ctx.lineWidth = stroke.getWidth();
+      ctx.stroke();
+    }
+    
+    // 绘制加号
+    const plusSize = radius * 0.6; // 加号大小为圆形的60%
+    const plusThickness = Math.max(2, radius * 0.15); // 加号线条粗细
+    
+    ctx.strokeStyle = stroke ? stroke.getColor() : '#FFFFFF';
+    ctx.lineWidth = plusThickness;
+    ctx.lineCap = 'round';
+    
+    // 绘制水平线
+    ctx.beginPath();
+    ctx.moveTo(centerX - plusSize, centerY);
+    ctx.lineTo(centerX + plusSize, centerY);
+    ctx.stroke();
+    
+    // 绘制垂直线
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - plusSize);
+    ctx.lineTo(centerX, centerY + plusSize);
+    ctx.stroke();
+    
+    // 创建Icon样式
+    return new Icon({
+      src: canvas.toDataURL(),
+      anchor: [0.5, 0.5],
+      anchorXUnits: 'fraction',
+      anchorYUnits: 'fraction',
+      scale: 1
+    });
+  }
+
+  /**
+   * 创建自定义样式
+   * @private
+   */
+  _createStyle(styleConfig) {
+    const shapeType = styleConfig.shapeType || 0; // 默认为圆形
+    let imageStyle;
+    const radius = styleConfig.radius || 6;
+    const fillColor = styleConfig.fillColor || '#FF0000';
+    const stroke = styleConfig.showStroke !== false ? new Stroke({
+      color: styleConfig.strokeColor || '#FFFFFF',
+      width: styleConfig.strokeWidth || 2
+    }) : undefined;
+    switch (shapeType) {
+      case 0: // circle
+        imageStyle = new Circle({ radius, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 1: // rect
+        imageStyle = new RegularShape({ points: 4, radius, angle: Math.PI / 4, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 2: // triangle
+        imageStyle = new RegularShape({ points: 3, radius, rotation: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 3: // star5
+        imageStyle = new RegularShape({ points: 5, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 4: // pentagon
+        imageStyle = new RegularShape({ points: 5, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 5: // hexagon
+        imageStyle = new RegularShape({ points: 6, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 6: // heptagon
+        imageStyle = new RegularShape({ points: 7, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 7: // octagon
+        imageStyle = new RegularShape({ points: 8, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 8: // nonagon
+        imageStyle = new RegularShape({ points: 9, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 9: // decagon
+        imageStyle = new RegularShape({ points: 10, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 10: // cross
+        imageStyle = new RegularShape({ points: 4, radius, radius2: 0, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 11: // x
+        imageStyle = new RegularShape({ points: 4, radius, radius2: 0, angle: Math.PI / 4, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 12: // diamond
+        imageStyle = new RegularShape({ points: 4, radius, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 13: // plus
+        imageStyle = new RegularShape({ points: 4, radius, radius2: radius / 2.5, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 14: // star6
+        imageStyle = new RegularShape({ points: 6, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 15: // star7
+        imageStyle = new RegularShape({ points: 7, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 16: // star8
+        imageStyle = new RegularShape({ points: 8, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 17: // star9
+        imageStyle = new RegularShape({ points: 9, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 18: // star10
+        imageStyle = new RegularShape({ points: 10, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 19: // ellipse（用RegularShape近似椭圆）
+        imageStyle = new RegularShape({ points: 100, radius, radius2: radius / 2, angle: 0, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 20: // custom（预留）
+        imageStyle = new Circle({ radius, fill: new Fill({ color: fillColor }), stroke });
+        break;
+      case 21: // circle with plus (圆形里面带加号)
+        // 创建圆形里面带加号的复合形状
+        imageStyle = this._createCirclePlusStyle(radius, fillColor, stroke);
+        break;
+      default:
+        imageStyle = new Circle({ radius, fill: new Fill({ color: fillColor }), stroke });
+    }
+    return new Style({
+      image: imageStyle
+    });
+  }
+
+  /**
+   * 清除所有点位
+   */
+  clearMarkers() {
+    this.vectorSource.clear();
+  }
+
+  /**
+   * 移除指定点位
+   * @param {Feature} feature 要移除的点位要素
+   */
+  removeMarker(feature) {
+    this.vectorSource.removeFeature(feature);
+  }
+  /**
+   * 设置最小缩放级别
+   * @param {number} minZoom 最小缩放级别
+   */
+    setMinZoom(minZoom) {
+      this.vectorLayer.setMinZoom(minZoom);
+    }
+  /**
+   * 设置最大缩放级别
+   * @param {number} maxZoom 最大缩放级别
+   */
+  setMaxZoom(maxZoom) {
+    this.vectorLayer.setMaxZoom(maxZoom);
+  }
+}
+export default MarkerLayer;

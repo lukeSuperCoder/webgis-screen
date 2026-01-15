@@ -2,8 +2,6 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
-import UserManage from '../views/user/UserManage.vue'
-import SoilElementQuery from '../views/soil/SoilElementQuery.vue'
 
 Vue.use(VueRouter)
 
@@ -18,18 +16,124 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { requiresAuth: true },
+    redirect: '/monitor',
     children: [
       {
-        path: 'user',
-        name: 'UserManage',
-        component: UserManage,
+        path: 'monitor',
+        name: 'Monitor',
+        component: () => import('../views/Monitor.vue'),
         meta: { requiresAuth: true }
       },
       {
-        path: 'soil/element-query',
-        name: 'SoilElementQuery',
-        component: SoilElementQuery,
-        meta: { requiresAuth: true }
+        path: 'analysis',
+        name: 'Analysis',
+        component: () => import('../views/analysis/index.vue'),
+        meta: { requiresAuth: true },
+        redirect: '/analysis/comprehensive',
+        children: [
+          {
+            path: 'standards',
+            name: 'AnalysisStandards',
+            component: () => import('../views/analysis/standards.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'standards-config',
+            name: 'AnalysisStandardsConfig',
+            component: () => import('../views/analysis/standards-config.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'comprehensive',
+            name: 'AnalysisComprehensive',
+            component: () => import('../views/analysis/comprehensive.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'single-site-multi-factor',
+            name: 'AnalysisSingleSiteMultiFactor',
+            component: () => import('../views/analysis/single-site-multi-factor.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'single-site-comparison',
+            name: 'AnalysisSingleSiteComparison',
+            component: () => import('../views/analysis/single-site-comparison.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'multi-site-single-factor',
+            name: 'AnalysisMultiSiteSingleFactor',
+            component: () => import('../views/analysis/multi-site-single-factor.vue'),
+            meta: { requiresAuth: true }
+          }
+        ]
+      },
+      {
+        path: 'data',
+        name: 'DataManage',
+        component: () => import('../views/data-manage/index.vue'),
+        meta: { requiresAuth: true },
+        redirect: '/data/quality-rules',
+        children: [
+          {
+            path: 'quality-rules',
+            name: 'DataQualityRules',
+            component: () => import('../views/data-manage/quality-rules.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'well-management',
+            name: 'DataWellManagement',
+            component: () => import('../views/data-manage/well-management.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'water-source-management',
+            name: 'DataWaterSourceManagement',
+            component: () => import('../views/data-manage/water-source-management.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'monitoring-data',
+            name: 'DataMonitoringData',
+            component: () => import('../views/data-manage/monitoring-data.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'project-config',
+            name: 'DataProjectConfig',
+            component: () => import('../views/data-manage/project-config.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'pollution-metric',
+            name: 'DataPollutionMetric',
+            component: () => import('../views/data-manage/pollution-metric.vue'),
+            meta: { requiresAuth: true }
+          }
+        ]
+      },
+      {
+        path: 'system',
+        name: 'SystemManage',
+        component: () => import('../views/system-manage/index.vue'),
+        meta: { requiresAuth: true },
+        redirect: '/system/user-management',
+        children: [
+          {
+            path: 'user-management',
+            name: 'SystemUserManagement',
+            component: () => import('../views/system-manage/user-management.vue'),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: 'site-management',
+            name: 'SystemSiteManagement',
+            component: () => import('../views/system-manage/site-management.vue'),
+            meta: { requiresAuth: true }
+          }
+        ]
       }
     ]
   }
