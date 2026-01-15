@@ -2,7 +2,6 @@
   <div class="soil-map">
     <div class="map-container">
       <div id="map" style="width: 100%; height: 100%;">
-        <div class="map-legend" id="map-legend"></div>
       </div>
       <!-- 工具栏 -->
       <div class="map-toolbar">
@@ -219,7 +218,7 @@ export default {
       currentBaseLayers: [],
       wmsLayerPhos: null,
       wmsLayerOrg: null,
-      tdtKey: '8c921ec02e6d0b4e16f6e4e0afc8c6ff',
+      tdtKey: '9254b8157f0ff0a6331196e4afc27cb6',
       draw: null,
       vectorSource: null,
       vectorLayer: null,
@@ -293,29 +292,45 @@ export default {
         })
       })
 
-      // 创建WMS图层 - 有效磷
+       // 创建WMS图层 - trsh_part（土壤数据）
       this.wmsLayerPhos = new TileLayer({
         source: new TileWMS({
-          url: 'http://localhost:8082/geoserver/shiyan4/wms',
+          url: 'http://localhost:8080/geoserver/soil_data/wms',
           params: {
-            'LAYERS': 'shiyan4:有效磷和行政区',
-            'TILED': true
+            'LAYERS': 'soil_data:trsh_part',  // 添加工作空间前缀
+            'TILED': true,
+            'VERSION': '1.1.1',  // 指定WMS版本
+            'FORMAT': 'image/png',  // 明确指定输出格式
+            'TRANSPARENT': true  // 支持透明背景
           },
-          serverType: 'geoserver'
-        })
+          serverType: 'geoserver',
+          // 添加过渡效果，提升用户体验
+          transition: 0
+        }),
+        opacity: 0.8,  // 可调整透明度 0-1
+        visible: true,  // 控制初始可见性
+        zIndex: 10  // 控制图层叠加顺序
       })
 
-      // 创建WMS图层 - 有机质
+      // 创建WMS图层 - xianqu（行政区数据）
       this.wmsLayerOrg = new TileLayer({
         source: new TileWMS({
-          url: 'http://localhost:8082/geoserver/shiyan4/wms',
+          url: 'http://localhost:8080/geoserver/soil_data/wms',
           params: {
-            'LAYERS': 'shiyan4:有机质和行政区',
-            'TILED': true
+            'LAYERS': 'soil_data:xianqu',  // 添加工作空间前缀
+            'TILED': true,
+            'VERSION': '1.1.1',
+            'FORMAT': 'image/png',
+            'TRANSPARENT': true
           },
-          serverType: 'geoserver'
-        })
+          serverType: 'geoserver',
+          transition: 0
+        }),
+        opacity: 0.6,
+        visible: true,
+        zIndex: 11  // 行政区图层在上层
       })
+
 
       // 初始化地图
       this.map = new Map({
@@ -328,7 +343,6 @@ export default {
       })
 
       this.currentBaseLayers = [tdtVecLayer, tdtCvaLayer]
-      this.updateLegend('phos')
     },
 
     // 切换专题图层
@@ -339,7 +353,6 @@ export default {
       } else {
         this.map.getLayers().setAt(2, this.wmsLayerOrg)
       }
-      this.updateLegend(type)
     },
 
     // 切换底图
@@ -403,13 +416,6 @@ export default {
       this.currentBaseLayers = newBaseLayers
     },
 
-    // 更新图例
-    updateLegend(type) {
-      const legendUrl = type === 'phos'
-        ? 'http://localhost:8082/geoserver/shiyan4/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&LAYER=shiyan4:有效磷和行政区'
-        : 'http://localhost:8082/geoserver/shiyan4/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&LAYER=shiyan4:有机质和行政区'
-      document.getElementById('map-legend').innerHTML = `<img src="${legendUrl}" alt="${type === 'phos' ? '有效磷' : '有机质'}图例" style="max-width:180px;">`
-    },
 
     // 激活绘图工具
     activateDrawing(type) {
@@ -580,15 +586,6 @@ export default {
   gap: 10px;
 }
 
-.map-legend {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 10px;
-  border-radius: 4px;
-  z-index: 1000;
-}
 
 :deep(.el-tabs--border-card) {
   background: transparent;
